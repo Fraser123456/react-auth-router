@@ -21,7 +21,12 @@ export {
   useQuery,
 } from "./routing";
 
-// No additional component exports currently needed
+// Component exports
+export {
+  Breadcrumb,
+  Navigation,
+  ProtectedComponent,
+} from "./components";
 
 // Error management exports
 export {

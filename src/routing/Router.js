@@ -92,3 +92,11 @@ export const useRouter = () => {
   }
   return context;
 };
+
+export const useNavigate = () => {
+  const context = useContext(RouterContext);
+  if (!context) {
+    throw new Error("useNavigate must be used within a Router component");
+  }
+  return context.navigate;
+};
