@@ -1,0 +1,57 @@
+{
+  "name": "react-auth-router",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A comprehensive React library for authentication and routing with permissions, error handling, and performance optimization using subscriber patterns",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "types/index.d.ts",
+  "files": [
+    "dist",
+    "types",
+    "README.md"
+  ],
+  "keywords": [
+    "react",
+    "authentication",
+    "routing",
+    "permissions",
+    "rbac",
+    "subscriber-pattern",
+    "jwt",
+    "error-handling",
+    "performance"
+  ],
+  "author": "Fraser Carpenter",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Fraser123456/react-auth-router.git"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0 <20.0.0",
+    "react-dom": ">=16.8.0 <20.0.0"
+  },
+  "dependencies": {
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.6",
+    "@babel/preset-env": "^7.23.6",
+    "@babel/preset-react": "^7.23.3",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^3.29.5",
+    "rollup-plugin-peer-deps-external": "^2.2.4"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
