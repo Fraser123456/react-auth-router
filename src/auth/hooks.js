@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { getAuthStore } from "./AuthStore";
 
 export const useAuth = () => {
   const authStore = getAuthStore();
