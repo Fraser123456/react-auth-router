@@ -75,17 +75,29 @@ export const routeUtils = {
   },
 
   extractParams: (path, routePath) => {
-    if (!routePath || !routePath.includes(":")) return {};
+    console.log("[extractParams] Input:", { path, routePath });
+
+    if (!routePath || !routePath.includes(":")) {
+      console.log("[extractParams] No params in route");
+      return {};
+    }
 
     const routeRegex = new RegExp(
       "^" + routePath.replace(/:\w+/g, "([^/]+)") + "$"
     );
-    const matches = path.match(routeRegex);
+    console.log("[extractParams] Regex:", routeRegex);
 
-    if (!matches) return {};
+    const matches = path.match(routeRegex);
+    console.log("[extractParams] Matches:", matches);
+
+    if (!matches) {
+      console.log("[extractParams] No regex match");
+      return {};
+    }
 
     const paramNames =
       routePath.match(/:(\w+)/g)?.map((p) => p.substring(1)) || [];
+    console.log("[extractParams] Param names:", paramNames);
 
     const params = {};
     paramNames.forEach((name, index) => {
@@ -94,6 +106,7 @@ export const routeUtils = {
       }
     });
 
+    console.log("[extractParams] Final params:", params);
     return params;
   },
 

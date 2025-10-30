@@ -21,11 +21,18 @@ export const Routes = ({
   // Extract params from the current URL based on the matched route
   const params = useMemo(() => {
     if (!currentRoute) return {};
-    return routeUtils.extractParams(currentPath, currentRoute.path);
+    const extracted = routeUtils.extractParams(currentPath, currentRoute.path);
+    console.log("[Routes] Extracting params:", {
+      currentPath,
+      routePath: currentRoute.path,
+      extracted
+    });
+    return extracted;
   }, [currentPath, currentRoute]);
 
   // Update Router context with extracted params so useParams() works
   useEffect(() => {
+    console.log("[Routes] Updating context params:", params);
     updateParams(params);
   }, [params, updateParams]);
 
