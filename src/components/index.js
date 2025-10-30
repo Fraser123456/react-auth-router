@@ -102,7 +102,14 @@ const DefaultNotFound = () => (
   </div>
 );
 
-export const Breadcrumb = ({ routeConfig, className = "" }) => {
+export const Breadcrumb = ({
+  routeConfig,
+  className = "",
+  customBreadcrumbComponent: CustomBreadcrumbComponent,
+  showHome = true,
+  homeTitle = "Home",
+  homePath = "/"
+}) => {
   const { currentPath, navigate } = useRouter();
 
   if (!routeConfig) return null;
@@ -110,35 +117,22 @@ export const Breadcrumb = ({ routeConfig, className = "" }) => {
   const allRoutes = routeUtils.getAllRoutes(routeConfig);
   const currentRoute = routeUtils.findMatchingRoute(currentPath, allRoutes);
 
-  if (!currentRoute?.breadcrumb) return null;
+  if (!currentRoute) return null;
 
-  // Build breadcrumb path with routes
-  const buildBreadcrumbPath = () => {
-    const breadcrumbs = [{ title: "Home", path: "/", isClickable: true }];
+  // Use the existing generateBreadcrumbs utility
+  const breadcrumbs = routeUtils.generateBreadcrumbs(currentRoute, allRoutes);
 
-    if (currentRoute.breadcrumb) {
-      // Try to match breadcrumb items to actual routes
-      let currentBasePath = "";
+  // Add home breadcrumb if needed
+  if (showHome && breadcrumbs.length > 0 && breadcrumbs[0].path !== homePath) {
+    breadcrumbs.unshift({ title: homeTitle, path: homePath, route: null });
+  }
 
-      currentRoute.breadcrumb.forEach((crumb, index) => {
-        // This is a simplified approach - you might need more complex logic
-        // based on your route structure
-        const isLast = index === currentRoute.breadcrumb.length - 1;
+  if (breadcrumbs.length === 0) return null;
 
-        breadcrumbs.push({
-          title: crumb,
-          path: isLast
-            ? currentPath
-            : `${currentBasePath}/${crumb.toLowerCase()}`,
-          isClickable: !isLast,
-        });
-      });
-    }
-
-    return breadcrumbs;
-  };
-
-  const breadcrumbs = buildBreadcrumbPath();
+  // If custom component provided, use it
+  if (CustomBreadcrumbComponent) {
+    return <CustomBreadcrumbComponent breadcrumbs={breadcrumbs} navigate={navigate} />;
+  }
 
   return (
     <nav
@@ -156,82 +150,87 @@ export const Breadcrumb = ({ routeConfig, className = "" }) => {
           gap: "0.25rem",
         }}
       >
-        {breadcrumbs.map((breadcrumb, index) => (
-          <li
-            key={index}
-            style={{ display: "inline-flex", alignItems: "center" }}
-          >
-            {index > 0 && (
-              <svg
-                style={{
-                  width: "1.5rem",
-                  height: "1.5rem",
-                  color: "#9ca3af",
-                  marginRight: "0.25rem",
-                }}
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
+        {breadcrumbs.map((breadcrumb, index) => {
+          const isLast = index === breadcrumbs.length - 1;
+          const isHome = index === 0 && breadcrumb.path === homePath;
 
-            {breadcrumb.isClickable ? (
-              <button
-                onClick={() => navigate(breadcrumb.path)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  color: "#374151",
-                  backgroundColor: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  textDecoration: "none",
-                }}
-                onMouseOver={(e) => (e.target.style.color = "#2563eb")}
-                onMouseOut={(e) => (e.target.style.color = "#374151")}
-              >
-                {index === 0 && (
-                  <Home
-                    style={{
-                      width: "1rem",
-                      height: "1rem",
-                      marginRight: "0.5rem",
-                    }}
+          return (
+            <li
+              key={breadcrumb.path || index}
+              style={{ display: "inline-flex", alignItems: "center" }}
+            >
+              {index > 0 && (
+                <svg
+                  style={{
+                    width: "1.5rem",
+                    height: "1.5rem",
+                    color: "#9ca3af",
+                    marginRight: "0.25rem",
+                  }}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clipRule="evenodd"
                   />
-                )}
-                {breadcrumb.title}
-              </button>
-            ) : (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  color: "#6b7280",
-                }}
-              >
-                {index === 0 && (
-                  <Home
-                    style={{
-                      width: "1rem",
-                      height: "1rem",
-                      marginRight: "0.5rem",
-                    }}
-                  />
-                )}
-                {breadcrumb.title}
-              </span>
-            )}
-          </li>
-        ))}
+                </svg>
+              )}
+
+              {isLast ? (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    color: "#6b7280",
+                  }}
+                >
+                  {isHome && (
+                    <Home
+                      style={{
+                        width: "1rem",
+                        height: "1rem",
+                        marginRight: "0.5rem",
+                      }}
+                    />
+                  )}
+                  {breadcrumb.title}
+                </span>
+              ) : (
+                <button
+                  onClick={() => navigate(breadcrumb.path)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    color: "#374151",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    textDecoration: "none",
+                  }}
+                  onMouseOver={(e) => (e.target.style.color = "#2563eb")}
+                  onMouseOut={(e) => (e.target.style.color = "#374151")}
+                >
+                  {isHome && (
+                    <Home
+                      style={{
+                        width: "1rem",
+                        height: "1rem",
+                        marginRight: "0.5rem",
+                      }}
+                    />
+                  )}
+                  {breadcrumb.title}
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );

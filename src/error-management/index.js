@@ -3,9 +3,9 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
 } from "react";
-import { AlertTriangle, RefreshCw, Home, Bug, X } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
 
 export const ErrorTypes = {
   NETWORK: "NETWORK",
@@ -17,37 +17,96 @@ export const ErrorTypes = {
   CLIENT: "CLIENT",
   UNKNOWN: "UNKNOWN",
   SUCCESS: "SUCCESS",
+  INFO: "INFO",
+  WARNING: "WARNING",
 };
 
 const ErrorContext = createContext();
 
-export const ErrorProvider = ({ children }) => {
+export const ErrorProvider = ({ children, toastConfig = {} }) => {
   const [errors, setErrors] = useState([]);
   const [globalError, setGlobalError] = useState(null);
 
-  const addError = (error) => {
+  const defaultToastConfig = {
+    position: "top-right",
+    autoClose: 5000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    ...toastConfig,
+  };
+
+  const addError = (message, options = {}) => {
     const errorObj = {
       id: Date.now() + Math.random(),
       timestamp: new Date(),
-      type: error.type || ErrorTypes.UNKNOWN,
-      message: error.message || "An unexpected error occurred",
-      details: error.details || null,
-      stack: error.stack || null,
-      dismissed: false,
+      type: ErrorTypes.UNKNOWN,
+      message: message || "An unexpected error occurred",
+      details: options.details || null,
+      stack: options.stack || null,
     };
 
     setErrors((prev) => [...prev, errorObj]);
-
     console.error("Application Error:", errorObj);
+
+    toast.error(message, { ...defaultToastConfig, ...options });
+
+    return errorObj.id;
   };
 
-  const removeError = (errorId) => {
-    setErrors((prev) => prev.filter((err) => err.id !== errorId));
+  const addSuccess = (message, options = {}) => {
+    const successObj = {
+      id: Date.now() + Math.random(),
+      timestamp: new Date(),
+      type: ErrorTypes.SUCCESS,
+      message: message || "Operation successful",
+      details: options.details || null,
+    };
+
+    console.log("Success:", successObj);
+
+    toast.success(message, { ...defaultToastConfig, ...options });
+
+    return successObj.id;
+  };
+
+  const addWarning = (message, options = {}) => {
+    const warningObj = {
+      id: Date.now() + Math.random(),
+      timestamp: new Date(),
+      type: ErrorTypes.WARNING,
+      message: message || "Warning",
+      details: options.details || null,
+    };
+
+    console.warn("Warning:", warningObj);
+
+    toast.warning(message, { ...defaultToastConfig, ...options });
+
+    return warningObj.id;
+  };
+
+  const addInfo = (message, options = {}) => {
+    const infoObj = {
+      id: Date.now() + Math.random(),
+      timestamp: new Date(),
+      type: ErrorTypes.INFO,
+      message: message || "Information",
+      details: options.details || null,
+    };
+
+    console.info("Info:", infoObj);
+
+    toast.info(message, { ...defaultToastConfig, ...options });
+
+    return infoObj.id;
   };
 
   const clearAllErrors = () => {
     setErrors([]);
     setGlobalError(null);
+    toast.dismiss();
   };
 
   const setFatalError = (error) => {
@@ -60,13 +119,15 @@ export const ErrorProvider = ({ children }) => {
         errors,
         globalError,
         addError,
-        removeError,
+        addSuccess,
+        addWarning,
+        addInfo,
         clearAllErrors,
         setFatalError,
       }}
     >
+      <ToastContainer {...defaultToastConfig} />
       {children}
-      <ErrorDisplay />
       {globalError && <FatalErrorDisplay error={globalError} />}
     </ErrorContext.Provider>
   );
@@ -308,131 +369,6 @@ const ErrorFallback = ({ error, errorInfo, onRetry, level }) => {
   );
 };
 
-const ErrorDisplay = () => {
-  const { errors, removeError } = useError();
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: "1rem",
-        right: "1rem",
-        zIndex: 50,
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.5rem",
-      }}
-    >
-      {errors.slice(-3).map((error) => (
-        <ErrorToast
-          key={error.id}
-          error={error}
-          onDismiss={() => removeError(error.id)}
-        />
-      ))}
-    </div>
-  );
-};
-
-const ErrorToast = ({ error, onDismiss }) => {
-  const [isVisible, setIsVisible] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onDismiss, 300);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [onDismiss]);
-
-  const getErrorColor = (type) => {
-    switch (type) {
-      case ErrorTypes.NETWORK:
-        return "#f97316";
-      case ErrorTypes.AUTHENTICATION:
-      case ErrorTypes.AUTHORIZATION:
-        return "#eab308";
-      case ErrorTypes.VALIDATION:
-        return "#3b82f6";
-      case ErrorTypes.SUCCESS:
-        return "#10b981";
-      default:
-        return "#ef4444";
-    }
-  };
-
-  return (
-    <div
-      style={{
-        transform: isVisible ? "translateX(0)" : "translateX(100%)",
-        opacity: isVisible ? 1 : 0,
-        transition: "all 0.3s ease-in-out",
-        maxWidth: "24rem",
-        width: "100%",
-        backgroundColor: "white",
-        borderRadius: "0.5rem",
-        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-        borderLeft: `4px solid ${getErrorColor(error.type)}`,
-      }}
-    >
-      <div style={{ padding: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "flex-start" }}>
-          <div style={{ flexShrink: 0 }}>
-            <AlertTriangle
-              style={{
-                height: "1.25rem",
-                width: "1.25rem",
-                color: getErrorColor(error.type),
-              }}
-            />
-          </div>
-          <div style={{ marginLeft: "0.75rem", flex: 1 }}>
-            <p
-              style={{
-                fontSize: "0.875rem",
-                fontWeight: "500",
-                color: "#111827",
-                margin: 0,
-              }}
-            >
-              {error.type}{" "}
-              {error.type === ErrorTypes.SUCCESS ? "Success" : "Error"}
-            </p>
-            <p
-              style={{
-                fontSize: "0.875rem",
-                color: "#6b7280",
-                marginTop: "0.25rem",
-                margin: "0.25rem 0 0 0",
-              }}
-            >
-              {error.message}
-            </p>
-          </div>
-          <div style={{ marginLeft: "1rem", flexShrink: 0 }}>
-            <button
-              onClick={() => {
-                setIsVisible(false);
-                setTimeout(onDismiss, 300);
-              }}
-              style={{
-                color: "#9ca3af",
-                backgroundColor: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "0.25rem",
-              }}
-            >
-              <X style={{ height: "1rem", width: "1rem" }} />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const FatalErrorDisplay = ({ error }) => {
   return (
     <div
@@ -506,7 +442,7 @@ const FatalErrorDisplay = ({ error }) => {
 };
 
 export const useApiError = () => {
-  const { addError } = useError();
+  const { addError, addWarning } = useError();
 
   const handleApiError = (error, context = "") => {
     let errorType = ErrorTypes.UNKNOWN;
@@ -536,12 +472,20 @@ export const useApiError = () => {
       message = "Network error. Please check your connection";
     }
 
-    addError({
-      type: errorType,
-      message: `${context ? context + ": " : ""}${message}`,
-      details: error.response?.data,
-      stack: error.stack,
-    });
+    const finalMessage = `${context ? context + ": " : ""}${message}`;
+
+    // Use warning for non-critical errors, error for critical ones
+    if (errorType === ErrorTypes.VALIDATION) {
+      addWarning(finalMessage, {
+        details: error.response?.data,
+        stack: error.stack,
+      });
+    } else {
+      addError(finalMessage, {
+        details: error.response?.data,
+        stack: error.stack,
+      });
+    }
   };
 
   return { handleApiError };

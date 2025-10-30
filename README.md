@@ -13,11 +13,13 @@
 - 🚀 **High Performance** - Subscriber pattern prevents unnecessary re-renders
 - 🔐 **Comprehensive Auth** - JWT tokens, automatic refresh, cross-tab sync
 - 🛡️ **Advanced Permissions** - Role-based + permission-based access control
-- 🧭 **Flexible Routing** - Nested routes, parameters, query strings, breadcrumbs
-- 🎯 **Error Handling** - Built-in error boundaries and management
-- 📱 **Mobile Ready** - Responsive navigation components
+- 🧭 **Flexible Routing** - Nested routes with automatic child matching, parameters, query strings
+- 🍞 **Smart Breadcrumbs** - Automatic breadcrumb generation from route hierarchy with custom component support
+- 🎯 **Error Handling** - Built-in error boundaries with react-toastify notifications (addSuccess, addError, addWarning, addInfo)
+- 📱 **Mobile Ready** - Responsive navigation with mobile breakpoints
 - 🔧 **TypeScript** - Full type safety and IntelliSense support
 - 🎨 **Customizable** - Override any component or behavior
+- 🛠️ **Route Utilities** - Powerful utilities for route matching, parameter extraction, and breadcrumbs
 
 ## Quick Start
 
@@ -39,6 +41,7 @@ import {
   initializeAuth,
   createRouteConfig,
 } from "react-auth-router";
+import "react-toastify/dist/ReactToastify.css"; // Required for notifications
 
 // Initialize auth system
 initializeAuth({
@@ -48,14 +51,38 @@ initializeAuth({
   },
 });
 
-// Define routes
+// Define routes with nested children
 const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/",
+      component: HomePage,
+      title: "Home",
+      showInNav: true,
+    },
+  ],
   protected: [
     {
       path: "/dashboard",
-      component: "DashboardPage",
+      component: DashboardPage,
       title: "Dashboard",
       requireAuth: true,
+      showInNav: true,
+    },
+    {
+      path: "/users",
+      component: UsersPage,
+      title: "Users",
+      requireAuth: true,
+      requiredPermissions: ["read_users"],
+      showInNav: true,
+      children: [
+        {
+          path: "/users/:id",
+          component: UserDetailPage,
+          title: "User Details",
+        },
+      ],
     },
   ],
 });
@@ -64,7 +91,10 @@ function App() {
   return (
     <Router>
       <Navigation routeConfig={routeConfig} />
-      <Routes />
+      <main>
+        <Breadcrumb routeConfig={routeConfig} />
+        <Routes routeConfig={routeConfig} />
+      </main>
     </Router>
   );
 }
@@ -104,10 +134,34 @@ npm install react-auth-router
 yarn add react-auth-router
 ```
 
+### ⚠️ Important Setup Step
+
+**After installation, you MUST import the react-toastify CSS in your app's entry point:**
+
+```jsx
+// In your src/index.js or src/App.js
+import "react-toastify/dist/ReactToastify.css";
+```
+
+Without this import, toast notifications will not display properly.
+
 ### Requirements
 
 - React >= 16.8.0
 - React DOM >= 16.8.0
+
+### Dependencies
+
+The library includes:
+- **react-toastify** - Beautiful toast notifications (automatically installed)
+- **lucide-react** - Icon library (automatically installed)
+
+**Important:** You must import the react-toastify CSS in your app entry point:
+
+```jsx
+// In your index.js or App.js
+import "react-toastify/dist/ReactToastify.css";
+```
 
 ## Core Concepts
 
@@ -408,11 +462,35 @@ const UsersPage = () => {
 
 ### Nested Routes
 
+React Auth Router fully supports nested routes with automatic child route matching.
+
 ```jsx
+const routeConfig = createRouteConfig({
+  protected: [
+    {
+      path: "/users",
+      component: "UsersPage",
+      title: "Users",
+      children: [
+        {
+          path: "/users/:id",
+          component: "UserDetailPage",
+          title: "User Details",
+        },
+        {
+          path: "/users/:id/edit",
+          component: "EditUserPage",
+          title: "Edit User",
+        },
+      ],
+    },
+  ],
+});
+
 const App = () => {
   return (
     <Router>
-      <Routes>
+      <Routes routeConfig={routeConfig} pageComponents={pageComponents}>
         {/* /users renders UsersPage */}
         {/* /users/123 renders UserDetailPage */}
         {/* /users/123/edit renders EditUserPage */}
@@ -421,6 +499,12 @@ const App = () => {
   );
 };
 ```
+
+**How nested routes work:**
+- The `findMatchingRoute` utility automatically searches through child routes
+- When a parent route matches, it checks all children before returning
+- Returns the most specific (deepest) matching route
+- Parent-child relationships are automatically maintained for breadcrumbs
 
 ### Custom Route Guards
 
@@ -522,10 +606,22 @@ initializeAuth({
 
 ## Error Handling
 
+### Setup
+
+**First, import the react-toastify CSS in your app entry point:**
+
+```jsx
+// In your index.js or App.js
+import "react-toastify/dist/ReactToastify.css";
+```
+
 ### Error Boundaries
+
+The `ErrorProvider` wraps your app to provide global error handling and toast notifications using **react-toastify**.
 
 ```jsx
 import { ErrorProvider, ErrorBoundary } from "react-auth-router";
+import "react-toastify/dist/ReactToastify.css"; // Required!
 
 function App() {
   return (
@@ -548,13 +644,46 @@ function App() {
 }
 ```
 
-### Error Handling in Components
+**Customize Toast Configuration:**
 
 ```jsx
-import { useError, useApiError, ErrorTypes } from "react-auth-router";
+<ErrorProvider
+  toastConfig={{
+    position: "bottom-right",      // Toast position
+    autoClose: 3000,               // Auto-close duration (ms)
+    hideProgressBar: false,        // Show/hide progress bar
+    closeOnClick: true,            // Close on click
+    pauseOnHover: true,            // Pause timer on hover
+    draggable: true,               // Allow dragging
+    theme: "dark",                 // "light", "dark", or "colored"
+    className: "custom-toast",     // Custom CSS class
+  }}
+>
+  <App />
+</ErrorProvider>
+```
+
+**Available Toast Positions:**
+- `"top-left"`, `"top-right"`, `"top-center"`
+- `"bottom-left"`, `"bottom-right"`, `"bottom-center"`
+
+**Themes:**
+- `"light"` - Light background
+- `"dark"` - Dark background
+- `"colored"` - Colored background based on toast type
+
+### Error Handling in Components
+
+React Auth Router now uses **react-toastify** for beautiful, reliable toast notifications with separate methods for different notification types.
+
+**Note:** Make sure you've imported the CSS (see [Installation](#installation)).
+
+```jsx
+import { useError, useApiError } from "react-auth-router";
+// CSS import required: import "react-toastify/dist/ReactToastify.css";
 
 const UserProfile = () => {
-  const { addError } = useError();
+  const { addSuccess, addError, addWarning, addInfo } = useError();
   const { handleApiError } = useApiError();
 
   const saveProfile = async (profileData) => {
@@ -568,21 +697,45 @@ const UserProfile = () => {
         throw new Error("Failed to save profile");
       }
 
-      addError({
-        type: ErrorTypes.SUCCESS,
-        message: "Profile saved successfully!",
-      });
+      // Use specific notification methods
+      addSuccess("Profile saved successfully!");
     } catch (error) {
       handleApiError(error, "Saving profile");
     }
   };
 
+  const handleDelete = async () => {
+    addWarning("This action cannot be undone");
+    // ... delete logic
+  };
+
+  const showTip = () => {
+    addInfo("You can edit your profile anytime");
+  };
+
   return (
     <div>
       <button onClick={() => saveProfile(data)}>Save Profile</button>
+      <button onClick={handleDelete}>Delete</button>
+      <button onClick={showTip}>Show Tip</button>
     </div>
   );
 };
+```
+
+**Available Notification Methods:**
+- `addSuccess(message, options)` - Green success toast
+- `addError(message, options)` - Red error toast
+- `addWarning(message, options)` - Yellow warning toast
+- `addInfo(message, options)` - Blue info toast
+
+**Options:**
+```jsx
+addSuccess("Saved!", {
+  autoClose: 3000,      // Auto-close after 3 seconds
+  position: "top-left", // Toast position
+  theme: "dark",        // Dark theme
+});
 ```
 
 ### Custom Error Components
@@ -656,50 +809,169 @@ const CustomNavigation = () => {
 
 ### Breadcrumb
 
+The Breadcrumb component automatically generates breadcrumbs from your route hierarchy (parent-child relationships).
+
 ```jsx
 import { Breadcrumb } from "react-auth-router";
 
+// Basic usage
 const PageWithBreadcrumbs = () => (
   <div>
-    <Breadcrumb />
+    <Breadcrumb routeConfig={routeConfig} />
     <h1>Page Content</h1>
   </div>
+);
+
+// With custom options
+const CustomBreadcrumbs = () => (
+  <div>
+    <Breadcrumb
+      routeConfig={routeConfig}
+      className="my-breadcrumbs"
+      showHome={true}
+      homeTitle="Dashboard"
+      homePath="/dashboard"
+    />
+  </div>
+);
+
+// With custom breadcrumb component
+const MyCustomBreadcrumb = ({ breadcrumbs, navigate }) => (
+  <nav>
+    {breadcrumbs.map((crumb, index) => (
+      <span key={crumb.path}>
+        <button onClick={() => navigate(crumb.path)}>
+          {crumb.title}
+        </button>
+        {index < breadcrumbs.length - 1 && " / "}
+      </span>
+    ))}
+  </nav>
+);
+
+const WithCustomComponent = () => (
+  <Breadcrumb
+    routeConfig={routeConfig}
+    customBreadcrumbComponent={MyCustomBreadcrumb}
+  />
 );
 
 // Renders: Home > Users > User Details > Edit
 ```
 
+**Props:**
+- `routeConfig` (required) - Your route configuration
+- `className` - Custom CSS class
+- `customBreadcrumbComponent` - Custom component to render breadcrumbs
+- `showHome` - Show home breadcrumb (default: true)
+- `homeTitle` - Home breadcrumb title (default: "Home")
+- `homePath` - Home breadcrumb path (default: "/")
+
 ### Routes Component
+
+The Routes component renders your current route based on the path.
 
 ```jsx
 import { Routes } from "react-auth-router";
 
-// Simple usage
+// Basic usage with component strings
+const pageComponents = {
+  HomePage: HomePage,
+  DashboardPage: DashboardPage,
+  UsersPage: UsersPage,
+  UserDetailPage: UserDetailPage,
+};
+
+const App = () => (
+  <Router>
+    <Routes
+      routeConfig={routeConfig}
+      pageComponents={pageComponents}
+      notFoundComponent={Custom404Page}
+      loadingComponent={LoadingSpinner}
+    />
+  </Router>
+);
+
+// Using React components directly (no pageComponents needed)
+const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/",
+      component: HomePage, // Direct component reference
+      title: "Home",
+    },
+  ],
+});
+
 const App = () => (
   <Router>
     <Routes routeConfig={routeConfig} />
   </Router>
 );
-
-// Custom routes handling
-const CustomRoutes = () => {
-  const { currentPath } = useRouter();
-  const allRoutes = routeUtils.getAllRoutes(routeConfig);
-  const currentRoute = routeUtils.findMatchingRoute(currentPath, allRoutes);
-
-  if (!currentRoute) {
-    return <NotFoundPage />;
-  }
-
-  const PageComponent = pageComponents[currentRoute.component];
-
-  return (
-    <RouteGuard route={currentRoute}>
-      <PageComponent />
-    </RouteGuard>
-  );
-};
 ```
+
+**Props:**
+- `routeConfig` (required) - Your route configuration object
+- `pageComponents` - Object mapping component strings to actual components
+- `notFoundComponent` - Custom 404 component
+- `loadingComponent` - Custom loading component
+
+**How it works:**
+1. Gets current path from router context
+2. Finds matching route (including nested children)
+3. Applies RouteGuard for permission checking
+4. Renders the appropriate page component
+5. Passes `params` and `route` props to the component
+
+### RouteGuard
+
+The RouteGuard component handles all authentication and permission checks for routes.
+
+```jsx
+import { RouteGuard } from "react-auth-router";
+
+// Automatic usage (used internally by Routes)
+<RouteGuard route={currentRoute}>
+  <PageComponent />
+</RouteGuard>
+
+// Manual usage with custom components
+const ProtectedPage = () => (
+  <RouteGuard
+    route={{
+      requireAuth: true,
+      requiredRoles: ["admin"],
+      requiredPermissions: ["read_users"],
+    }}
+    fallback={<div>Loading...</div>}
+    unauthorizedComponent={CustomUnauthorizedPage}
+    forbiddenComponent={CustomForbiddenPage}
+  >
+    <YourProtectedContent />
+  </RouteGuard>
+);
+```
+
+**Props:**
+- `route` (required) - Route configuration object with:
+  - `requireAuth` - Requires user to be authenticated
+  - `requiredRoles` - Array of required roles
+  - `requiredPermissions` - Array of required permissions
+  - `requireAll` - If true, requires ALL roles/permissions; if false, requires ANY (default: true)
+  - `customGuard` - Custom function for access control
+- `children` - Content to render if access is granted
+- `fallback` - Component to show while checking permissions
+- `unauthorizedComponent` - Custom component for unauthenticated users
+- `forbiddenComponent` - Custom component for unauthorized users
+
+**Access Control Flow:**
+1. Checks authentication status
+2. Checks role requirements
+3. Checks permission requirements
+4. Runs custom guard function if provided
+5. Renders children if all checks pass
+6. Renders appropriate error component if checks fail
 
 ## Hooks
 
@@ -822,23 +1094,43 @@ const query = useQuery();
 
 #### `useError()`
 
-Global error management.
+Global error and notification management using react-toastify.
 
 ```jsx
 const {
-  errors, // Array of current errors
-  addError, // Add new error
-  removeError, // Remove specific error
-  clearAllErrors, // Clear all errors
+  errors,           // Array of current errors (for logging/tracking)
+  addError,         // Add error notification (red toast)
+  addSuccess,       // Add success notification (green toast)
+  addWarning,       // Add warning notification (yellow toast)
+  addInfo,          // Add info notification (blue toast)
+  clearAllErrors,   // Clear all notifications
 } = useError();
 
-// Add error
-addError({
-  type: ErrorTypes.VALIDATION,
-  message: "Please fill in all required fields",
-  details: { field: "email" },
+// Add different types of notifications
+addError("Failed to save", { autoClose: 5000 });
+addSuccess("Saved successfully!");
+addWarning("This action is risky");
+addInfo("New feature available");
+
+// With additional options
+addError("Network error", {
+  position: "bottom-right",
+  autoClose: 3000,
+  theme: "dark",
+  details: { code: 500 },
+  stack: error.stack,
 });
+
+// Clear all toasts
+clearAllErrors();
 ```
+
+**Method Signatures:**
+- `addError(message: string, options?: ToastOptions): string` - Returns toast ID
+- `addSuccess(message: string, options?: ToastOptions): string` - Returns toast ID
+- `addWarning(message: string, options?: ToastOptions): string` - Returns toast ID
+- `addInfo(message: string, options?: ToastOptions): string` - Returns toast ID
+- `clearAllErrors(): void` - Dismisses all active toasts
 
 #### `useApiError()`
 
@@ -912,6 +1204,53 @@ new AuthStore(config?: AuthConfig)
 **`isAuthenticated(): boolean`** - Authentication status
 **`getToken(): string | null`** - Current JWT token
 
+### Route Utilities (routeUtils)
+
+The `routeUtils` object provides helpful utilities for working with routes:
+
+```jsx
+import { routeUtils } from "react-auth-router";
+
+// Get all routes (flattens nested routes into single array)
+const allRoutes = routeUtils.getAllRoutes(routeConfig);
+// Returns: [route1, route2, child1, child2, ...]
+
+// Find matching route for a path (handles nested children automatically)
+const currentRoute = routeUtils.findMatchingRoute("/users/123", allRoutes);
+// Returns the most specific matching route
+
+// Extract parameters from URL
+const params = routeUtils.extractParams("/users/123/edit", "/users/:id/edit");
+// Returns: { id: "123" }
+
+// Generate breadcrumbs from route hierarchy
+const breadcrumbs = routeUtils.generateBreadcrumbs(currentRoute, allRoutes);
+// Returns: [{ title: "Users", path: "/users" }, { title: "User Details", path: "/users/123" }]
+```
+
+**Available Methods:**
+
+**`getAllRoutes(routeConfig)`**
+- Flattens route configuration into single array
+- Includes all nested children routes
+- Maintains parent references
+
+**`findMatchingRoute(path, routes)`**
+- Finds route matching the given path
+- Automatically searches through children
+- Returns most specific (deepest) match
+- Supports exact matching and path parameters
+
+**`extractParams(path, routePath)`**
+- Extracts parameters from URL path
+- Matches `:paramName` patterns
+- Returns object with parameter key-value pairs
+
+**`generateBreadcrumbs(route, routes)`**
+- Builds breadcrumb trail from route hierarchy
+- Uses parent relationships
+- Returns array of breadcrumb objects
+
 ### Route Configuration
 
 ```typescript
@@ -927,12 +1266,13 @@ interface Route {
   requiredPermissions?: string[]; // Required permissions
   requireAll?: boolean; // Require ALL roles/permissions vs ANY
   children?: Route[]; // Nested child routes
+  parent?: Route; // Parent route reference (auto-generated)
+  fullPath?: string; // Full path including parent paths (auto-generated)
   meta?: {
     // SEO/metadata
     title?: string;
     description?: string;
   };
-  breadcrumb?: string[]; // Breadcrumb trail
   customGuard?: (context: GuardContext) => boolean; // Custom access control
 }
 ```
@@ -979,6 +1319,7 @@ import {
   createRouteConfig,
   routeUtils,
 } from "react-auth-router";
+import "react-toastify/dist/ReactToastify.css"; // Required for notifications
 
 // Initialize auth
 initializeAuth({
@@ -1491,28 +1832,53 @@ export const useAuthActions = () => {
 
 ```jsx
 // utils/errorHandler.js
-import { ErrorTypes } from "react-auth-router";
+import { useError } from "react-auth-router";
 
-export const handleApiError = (error, context = "") => {
-  const errorMap = {
-    400: { type: ErrorTypes.VALIDATION, message: "Invalid request" },
-    401: { type: ErrorTypes.AUTHENTICATION, message: "Please log in" },
-    403: { type: ErrorTypes.AUTHORIZATION, message: "Access denied" },
-    404: { type: ErrorTypes.NOT_FOUND, message: "Resource not found" },
-    500: { type: ErrorTypes.SERVER, message: "Server error" },
+export const useStructuredErrorHandler = () => {
+  const { addError, addWarning } = useError();
+
+  const handleApiError = (error, context = "") => {
+    let message = "An unexpected error occurred";
+
+    if (error.response) {
+      const status = error.response.status;
+
+      const errorMap = {
+        400: "Invalid request",
+        401: "Please log in",
+        403: "Access denied",
+        404: "Resource not found",
+        500: "Server error",
+      };
+
+      message = errorMap[status] || message;
+    } else if (error.request) {
+      message = "Network error. Please check your connection";
+    }
+
+    const finalMessage = context ? `${context}: ${message}` : message;
+
+    // Use warning for validation errors, error for critical issues
+    if (error.response?.status === 400) {
+      addWarning(finalMessage);
+    } else {
+      addError(finalMessage);
+    }
   };
 
-  const mappedError = errorMap[error.status] || {
-    type: ErrorTypes.UNKNOWN,
-    message: "An unexpected error occurred",
-  };
+  return { handleApiError };
+};
 
-  return {
-    ...mappedError,
-    message: context
-      ? `${context}: ${mappedError.message}`
-      : mappedError.message,
-    details: error.details,
+// Usage in components
+const MyComponent = () => {
+  const { handleApiError } = useStructuredErrorHandler();
+
+  const saveData = async () => {
+    try {
+      await api.save(data);
+    } catch (error) {
+      handleApiError(error, "Saving data");
+    }
   };
 };
 ```
@@ -2083,10 +2449,10 @@ describe("Protected Component", () => {
 
 ## Support
 
-- 📖 **Documentation**: [Full API Reference](https://github.com/yourusername/react-auth-router)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/react-auth-router/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/react-auth-router/discussions)
-- 📧 **Email**: support@react-auth-router.com
+- 📖 **Documentation**: [Full API Reference](https://github.com/Fraser123456/react-auth-router)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/Fraser123456/react-auth-router/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/Fraser123456/react-auth-router/discussions)
+- 📦 **NPM**: [react-auth-router](https://www.npmjs.com/package/react-auth-router)
 
 ## Contributing
 
@@ -2094,7 +2460,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## License
 
-MIT © [Your Name](https://github.com/yourusername)
+MIT © [Fraser Carpenter](https://github.com/Fraser123456)
 
 ---
 

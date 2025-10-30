@@ -43,19 +43,35 @@ export const routeUtils = {
   },
 
   findMatchingRoute: (path, routes) => {
-    for (let route of routes) {
-      if (route.exact) {
-        const routeRegex = new RegExp(
-          "^" + route.path.replace(/:\w+/g, "[^/]+") + "$"
-        );
-        if (routeRegex.test(path)) {
+    const findRoute = (path, routes) => {
+      for (let route of routes) {
+        let matched = false;
+
+        if (route.exact) {
+          const routeRegex = new RegExp(
+            "^" + route.path.replace(/:\w+/g, "[^/]+") + "$"
+          );
+          matched = routeRegex.test(path);
+        } else {
+          matched = path.startsWith(route.path);
+        }
+
+        if (matched) {
+          // If route has children, check them first
+          if (route.children && route.children.length > 0) {
+            const childMatch = findRoute(path, route.children);
+            if (childMatch) {
+              return childMatch;
+            }
+          }
+          // Return this route if no child matched
           return route;
         }
-      } else if (path.startsWith(route.path)) {
-        return route;
       }
-    }
-    return null;
+      return null;
+    };
+
+    return findRoute(path, routes);
   },
 
   extractParams: (path, routePath) => {
