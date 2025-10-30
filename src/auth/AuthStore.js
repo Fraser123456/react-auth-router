@@ -142,7 +142,11 @@ export class AuthStore {
         token = this.generateMockToken(userData);
       }
 
-      userData.permissions = this.expandPermissions(userData.roles);
+      // Only expand permissions from roles if backend didn't provide them
+      if (!userData.permissions || userData.permissions.length === 0) {
+        userData.permissions = this.expandPermissions(userData.roles || []);
+      }
+
       this.user = userData;
       this.persistToStorage(userData, token);
       this.setupTokenRefresh(token);
@@ -228,7 +232,8 @@ export class AuthStore {
         this.user = updatedUser;
       } else {
         this.user = { ...this.user, ...updates };
-        if (updates.roles) {
+        // Only expand permissions from roles if not explicitly provided in updates
+        if (updates.roles && !updates.permissions) {
           this.user.permissions = this.expandPermissions(updates.roles);
         }
       }
