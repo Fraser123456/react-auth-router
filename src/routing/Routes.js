@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "./Router";
 import { RouteGuard } from "./RouteGuard";
 import { routeUtils } from "../utils";
@@ -9,7 +9,7 @@ export const Routes = ({
   notFoundComponent: NotFoundComponent,
   loadingComponent: LoadingComponent,
 }) => {
-  const { currentPath, params } = useRouter();
+  const { currentPath, updateParams } = useRouter();
 
   if (!routeConfig) {
     throw new Error("Routes component requires routeConfig prop");
@@ -17,6 +17,17 @@ export const Routes = ({
 
   const allRoutes = routeUtils.getAllRoutes(routeConfig);
   const currentRoute = routeUtils.findMatchingRoute(currentPath, allRoutes);
+
+  // Extract params from the current URL based on the matched route
+  const params = useMemo(() => {
+    if (!currentRoute) return {};
+    return routeUtils.extractParams(currentPath, currentRoute.path);
+  }, [currentPath, currentRoute]);
+
+  // Update Router context with extracted params so useParams() works
+  useEffect(() => {
+    updateParams(params);
+  }, [params, updateParams]);
 
   useEffect(() => {
     if (currentRoute?.meta?.title) {

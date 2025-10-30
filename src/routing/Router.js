@@ -70,6 +70,10 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
     [basePath, enableHistory, updateRouteState]
   );
 
+  const updateParams = useCallback((newParams) => {
+    setParams(newParams);
+  }, []);
+
   return (
     <RouterContext.Provider
       value={{
@@ -78,6 +82,7 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
         query,
         navigate,
         basePath,
+        updateParams,
       }}
     >
       {children}
