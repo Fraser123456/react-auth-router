@@ -3,6 +3,8 @@ import React, {
   createContext,
   useContext,
   useState,
+  useCallback,
+  useMemo,
 } from "react";
 import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -27,7 +29,7 @@ export const ErrorProvider = ({ children, toastConfig = {} }) => {
   const [errors, setErrors] = useState([]);
   const [globalError, setGlobalError] = useState(null);
 
-  const defaultToastConfig = {
+  const defaultToastConfig = useMemo(() => ({
     position: "top-right",
     autoClose: 5000,
     hideProgressBar: false,
@@ -35,9 +37,9 @@ export const ErrorProvider = ({ children, toastConfig = {} }) => {
     pauseOnHover: true,
     draggable: true,
     ...toastConfig,
-  };
+  }), [toastConfig]);
 
-  const addError = (message, options = {}) => {
+  const addError = useCallback((message, options = {}) => {
     const errorObj = {
       id: Date.now() + Math.random(),
       timestamp: new Date(),
@@ -53,9 +55,9 @@ export const ErrorProvider = ({ children, toastConfig = {} }) => {
     toast.error(message, { ...defaultToastConfig, ...options });
 
     return errorObj.id;
-  };
+  }, [defaultToastConfig]);
 
-  const addSuccess = (message, options = {}) => {
+  const addSuccess = useCallback((message, options = {}) => {
     const successObj = {
       id: Date.now() + Math.random(),
       timestamp: new Date(),
@@ -69,9 +71,9 @@ export const ErrorProvider = ({ children, toastConfig = {} }) => {
     toast.success(message, { ...defaultToastConfig, ...options });
 
     return successObj.id;
-  };
+  }, [defaultToastConfig]);
 
-  const addWarning = (message, options = {}) => {
+  const addWarning = useCallback((message, options = {}) => {
     const warningObj = {
       id: Date.now() + Math.random(),
       timestamp: new Date(),
@@ -85,9 +87,9 @@ export const ErrorProvider = ({ children, toastConfig = {} }) => {
     toast.warning(message, { ...defaultToastConfig, ...options });
 
     return warningObj.id;
-  };
+  }, [defaultToastConfig]);
 
-  const addInfo = (message, options = {}) => {
+  const addInfo = useCallback((message, options = {}) => {
     const infoObj = {
       id: Date.now() + Math.random(),
       timestamp: new Date(),
@@ -101,31 +103,31 @@ export const ErrorProvider = ({ children, toastConfig = {} }) => {
     toast.info(message, { ...defaultToastConfig, ...options });
 
     return infoObj.id;
-  };
+  }, [defaultToastConfig]);
 
-  const clearAllErrors = () => {
+  const clearAllErrors = useCallback(() => {
     setErrors([]);
     setGlobalError(null);
     toast.dismiss();
-  };
+  }, []);
 
-  const setFatalError = (error) => {
+  const setFatalError = useCallback((error) => {
     setGlobalError(error);
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    errors,
+    globalError,
+    addError,
+    addSuccess,
+    addWarning,
+    addInfo,
+    clearAllErrors,
+    setFatalError,
+  }), [errors, globalError, addError, addSuccess, addWarning, addInfo, clearAllErrors, setFatalError]);
 
   return (
-    <ErrorContext.Provider
-      value={{
-        errors,
-        globalError,
-        addError,
-        addSuccess,
-        addWarning,
-        addInfo,
-        clearAllErrors,
-        setFatalError,
-      }}
-    >
+    <ErrorContext.Provider value={contextValue}>
       <ToastContainer {...defaultToastConfig} />
       {children}
       {globalError && <FatalErrorDisplay error={globalError} />}
@@ -444,7 +446,7 @@ const FatalErrorDisplay = ({ error }) => {
 export const useApiError = () => {
   const { addError, addWarning } = useError();
 
-  const handleApiError = (error, context = "") => {
+  const handleApiError = useCallback((error, context = "") => {
     let errorType = ErrorTypes.UNKNOWN;
     let message = "An unexpected error occurred";
 
@@ -486,7 +488,7 @@ export const useApiError = () => {
         stack: error.stack,
       });
     }
-  };
+  }, [addError, addWarning]);
 
-  return { handleApiError };
+  return useMemo(() => ({ handleApiError }), [handleApiError]);
 };
