@@ -192,7 +192,7 @@ declare module "react-auth-router" {
     SUCCESS: string;
   };
 
-  export function ErrorProvider(props: { children: ReactNode }): JSX.Element;
+  export function ErrorProvider(props: { children: ReactNode, toastConfig?: any }): JSX.Element;
   export function ErrorBoundary(props: {
     children: ReactNode;
     level?: string;
