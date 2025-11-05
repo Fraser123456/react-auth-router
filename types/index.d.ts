@@ -135,6 +135,20 @@ declare module "react-auth-router" {
   export function useParams(): RouterState["params"];
   export function useQuery(): RouterState["query"];
 
+  export interface LinkProps {
+    to: string;
+    replace?: boolean;
+    query?: Record<string, string>;
+    state?: any;
+    className?: string;
+    style?: React.CSSProperties;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+    children: ReactNode;
+    [key: string]: any;
+  }
+
+  export function Link(props: LinkProps): JSX.Element;
+
   export interface RouteGuardProps {
     route: Route;
     children: ReactNode;

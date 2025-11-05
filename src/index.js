@@ -15,6 +15,7 @@ export {
   Router,
   Routes,
   RouteGuard,
+  Link,
   useRouter,
   useNavigate,
   useParams,

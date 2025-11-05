@@ -3,6 +3,7 @@ import { useRouter as useRouterHook } from "./Router";
 export { Router, useRouter, useNavigate } from "./Router";
 export { RouteGuard } from "./RouteGuard";
 export { Routes } from "./Routes";
+export { Link } from "./Link";
 
 // Individual hooks for better performance
 export const useParams = () => {

@@ -13,7 +13,7 @@
 - 🚀 **High Performance** - Subscriber pattern prevents unnecessary re-renders
 - 🔐 **Comprehensive Auth** - JWT tokens, automatic refresh, cross-tab sync
 - 🛡️ **Advanced Permissions** - Role-based + permission-based access control
-- 🧭 **Flexible Routing** - Nested routes with automatic child matching, parameters, query strings
+- 🧭 **Flexible Routing** - Nested routes with automatic child matching, parameters, query strings, Link component for declarative navigation
 - 🍞 **Smart Breadcrumbs** - Automatic breadcrumb generation from route hierarchy with custom component support
 - 🎯 **Error Handling** - Built-in error boundaries with react-toastify notifications (addSuccess, addError, addWarning, addInfo)
 - 📱 **Mobile Ready** - Responsive navigation with mobile breakpoints
@@ -37,6 +37,7 @@ import {
   Router,
   Navigation,
   Routes,
+  Link,
   useAuth,
   initializeAuth,
   createRouteConfig,
@@ -459,6 +460,106 @@ const UsersPage = () => {
   );
 };
 ```
+
+### Link Component
+
+The `Link` component provides declarative, client-side navigation without page reloads (similar to react-router-dom's Link).
+
+#### Basic Usage
+
+```jsx
+import { Link } from "react-auth-router";
+
+const Navigation = () => (
+  <nav>
+    <Link to="/">Home</Link>
+    <Link to="/about">About</Link>
+    <Link to="/users">Users</Link>
+  </nav>
+);
+```
+
+#### Advanced Link Usage
+
+```jsx
+import { Link } from "react-auth-router";
+
+const UsersList = () => (
+  <div>
+    {/* Basic link */}
+    <Link to="/users/123">View User 123</Link>
+
+    {/* Link with query parameters */}
+    <Link
+      to="/users"
+      query={{ page: 2, sort: "name" }}
+    >
+      Users Page 2
+    </Link>
+
+    {/* Link with state (accessible in destination component) */}
+    <Link
+      to="/users/123"
+      state={{ from: "dashboard" }}
+    >
+      View User Details
+    </Link>
+
+    {/* Replace history instead of push */}
+    <Link
+      to="/login"
+      replace={true}
+    >
+      Login
+    </Link>
+
+    {/* Custom styling */}
+    <Link
+      to="/profile"
+      className="nav-link"
+      style={{ color: "blue", fontWeight: "bold" }}
+    >
+      My Profile
+    </Link>
+
+    {/* Link with custom onClick handler */}
+    <Link
+      to="/settings"
+      onClick={(e) => {
+        console.log("Navigating to settings");
+        // e.preventDefault() can be called to cancel navigation
+      }}
+    >
+      Settings
+    </Link>
+  </div>
+);
+```
+
+#### Link vs useNavigate vs \<a\> Tag
+
+```jsx
+// ❌ Regular <a> tag - causes full page reload
+<a href="/users">Users</a>
+
+// ✅ Link component - client-side navigation (recommended for JSX)
+<Link to="/users">Users</Link>
+
+// ✅ useNavigate hook - programmatic navigation (recommended for event handlers)
+const navigate = useNavigate();
+const handleClick = () => navigate("/users");
+```
+
+#### Link Props
+
+- **`to`** (required): The path to navigate to
+- **`replace`**: Replace current history entry instead of pushing (default: `false`)
+- **`query`**: Object of query parameters to add to URL
+- **`state`**: State data to pass with navigation
+- **`className`**: CSS class name
+- **`style`**: Inline styles object
+- **`onClick`**: Click handler (called before navigation)
+- All other HTML anchor props are supported
 
 ### Nested Routes
 
@@ -1054,7 +1155,7 @@ const {
 
 #### `useNavigate()`
 
-Navigation function only.
+Navigation function for programmatic navigation.
 
 ```jsx
 const navigate = useNavigate();
@@ -1069,6 +1170,8 @@ navigate("/users", {
   state: { from: "home" }, // Add state data
 });
 ```
+
+**Note:** For declarative navigation in JSX, use the `Link` component instead. See [Link Component](#link-component) section.
 
 #### `useParams()`
 
