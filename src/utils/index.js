@@ -130,4 +130,86 @@ export const routeUtils = {
 
     return breadcrumbs;
   },
+
+  /**
+   * Check if a user can access a specific route based on authentication and permissions
+   * @param {Object} route - The route to check
+   * @param {Object} context - Object containing isAuthenticated, hasRole, hasPermission, hasAnyRole, hasAnyPermission, hasAllRoles, hasAllPermissions
+   * @returns {boolean} - True if user can access the route
+   */
+  canAccessRoute: (route, context) => {
+    const {
+      isAuthenticated,
+      hasRole,
+      hasPermission,
+      hasAnyRole,
+      hasAnyPermission,
+      hasAllRoles,
+      hasAllPermissions,
+      user,
+    } = context;
+
+    // Check authentication requirement
+    if (route.requireAuth && !isAuthenticated) {
+      return false;
+    }
+
+    // Check role requirements
+    if (route.requiredRoles && route.requiredRoles.length > 0) {
+      const hasRequiredRole = route.requireAll
+        ? hasAllRoles(route.requiredRoles)
+        : hasAnyRole(route.requiredRoles);
+      if (!hasRequiredRole) {
+        return false;
+      }
+    }
+
+    // Check permission requirements
+    if (route.requiredPermissions && route.requiredPermissions.length > 0) {
+      const hasRequiredPermission = route.requireAll
+        ? hasAllPermissions(route.requiredPermissions)
+        : hasAnyPermission(route.requiredPermissions);
+      if (!hasRequiredPermission) {
+        return false;
+      }
+    }
+
+    // Check custom guard
+    if (route.customGuard && typeof route.customGuard === "function") {
+      const guardResult = route.customGuard({
+        hasRole,
+        hasPermission,
+        isAuthenticated,
+        hasAnyRole,
+        hasAnyPermission,
+        user,
+      });
+      if (!guardResult) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  /**
+   * Filter routes to only include those the user can access
+   * @param {Array} routes - Array of routes to filter
+   * @param {Object} context - Object containing isAuthenticated, hasRole, hasPermission, etc.
+   * @returns {Array} - Filtered array of accessible routes
+   */
+  filterAccessibleRoutes: (routes, context) => {
+    return routes.filter((route) => {
+      // Always include public routes (no auth requirements)
+      if (!route.requireAuth &&
+          (!route.requiredRoles || route.requiredRoles.length === 0) &&
+          (!route.requiredPermissions || route.requiredPermissions.length === 0) &&
+          !route.customGuard) {
+        return true;
+      }
+
+      // For protected routes, check access
+      return routeUtils.canAccessRoute(route, context);
+    });
+  },
 };

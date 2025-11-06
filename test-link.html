@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Link Component Test</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Mock the library exports for testing
+    const RouterContext = React.createContext();
+
+    const Router = ({ children }) => {
+      const [currentPath, setCurrentPath] = useState(window.location.pathname);
+      const [params, setParams] = useState({});
+      const [query, setQuery] = useState({});
+
+      const navigate = (path, options = {}) => {
+        console.log('Navigating to:', path, options);
+        setCurrentPath(path);
+        window.history.pushState(null, '', path);
+      };
+
+      return (
+        <RouterContext.Provider value={{ currentPath, params, query, navigate, basePath: '' }}>
+          {children}
+        </RouterContext.Provider>
+      );
+    };
+
+    const useNavigate = () => {
+      const context = React.useContext(RouterContext);
+      if (!context) throw new Error("useNavigate must be used within a Router");
+      return context.navigate;
+    };
+
+    const Link = ({ to, replace = false, query = {}, state = null, className = "", style = {}, onClick, children, ...props }) => {
+      const navigate = useNavigate();
+
+      const handleClick = (e) => {
+        e.preventDefault();
+        if (onClick) {
+          onClick(e);
+        }
+        if (!e.defaultPrevented) {
+          navigate(to, { replace, query, state });
+        }
+      };
+
+      return (
+        <a
+          href={to}
+          onClick={handleClick}
+          className={className}
+          style={{ cursor: "pointer", textDecoration: "none", color: "inherit", ...style }}
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    };
+
+    // Test App
+    const App = () => {
+      return (
+        <Router>
+          <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+            <h1>Link Component Test</h1>
+            <nav style={{ marginBottom: '20px', display: 'flex', gap: '15px' }}>
+              <Link to="/" style={{ color: 'blue', padding: '5px 10px', border: '1px solid blue' }}>
+                Home
+              </Link>
+              <Link to="/about" style={{ color: 'green', padding: '5px 10px', border: '1px solid green' }}>
+                About
+              </Link>
+              <Link
+                to="/contact"
+                style={{ color: 'purple', padding: '5px 10px', border: '1px solid purple' }}
+                onClick={(e) => console.log('Clicked Contact!')}
+              >
+                Contact
+              </Link>
+              <Link to="/users" query={{ page: 2 }} style={{ color: 'orange', padding: '5px 10px', border: '1px solid orange' }}>
+                Users (Page 2)
+              </Link>
+            </nav>
+            <p>Click the links above. Check the console and URL bar.</p>
+            <p>Current path: {window.location.pathname}</p>
+          </div>
+        </Router>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>

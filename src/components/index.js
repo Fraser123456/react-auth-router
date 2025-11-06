@@ -10,15 +10,41 @@ export const Routes = ({
   pageComponents = {},
   notFoundComponent: NotFoundComponent,
   loadingComponent: LoadingComponent,
+  hideUnauthorizedRoutes = true, // Secure by default - show 404 for unauthorized routes
 }) => {
   const { currentPath, params } = useRouter();
+  const { isAuthenticated, user } = useAuth();
+  const {
+    hasRole,
+    hasPermission,
+    hasAnyRole,
+    hasAnyPermission,
+    hasAllRoles,
+    hasAllPermissions,
+  } = usePermissions();
 
   if (!routeConfig) {
     throw new Error("Routes component requires routeConfig prop");
   }
 
   const allRoutes = routeUtils.getAllRoutes(routeConfig);
-  const currentRoute = routeUtils.findMatchingRoute(currentPath, allRoutes);
+
+  // Security: Filter routes based on user permissions before matching
+  // This prevents information disclosure by showing 404 for unauthorized routes
+  const routesToSearch = hideUnauthorizedRoutes
+    ? routeUtils.filterAccessibleRoutes(allRoutes, {
+        isAuthenticated,
+        hasRole,
+        hasPermission,
+        hasAnyRole,
+        hasAnyPermission,
+        hasAllRoles,
+        hasAllPermissions,
+        user,
+      })
+    : allRoutes;
+
+  const currentRoute = routeUtils.findMatchingRoute(currentPath, routesToSearch);
 
   useEffect(() => {
     if (currentRoute?.meta?.title) {

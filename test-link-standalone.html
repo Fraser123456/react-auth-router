@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Component Test</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .page {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .link-button {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 8px;
+      background-color: #2196F3;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .link-button:hover {
+      background-color: #0b7dda;
+    }
+    .status {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useContext, createContext, useCallback, useEffect } = React;
+
+    // Create Router Context
+    const RouterContext = createContext(null);
+
+    // Router Component
+    const Router = ({ children }) => {
+      const [currentPath, setCurrentPath] = useState(window.location.pathname || '/');
+      const [params, setParams] = useState({});
+      const [query, setQuery] = useState({});
+
+      const navigate = useCallback((path, options = {}) => {
+        console.log('🚀 [Navigate] Called with:', { path, options });
+
+        const { replace = false, query: queryParams = {}, state = null } = options;
+
+        // Build query string
+        const searchParams = new URLSearchParams(queryParams);
+        const finalPath = searchParams.toString()
+          ? `${path}?${searchParams}`
+          : path;
+
+        // Update browser history
+        if (replace) {
+          window.history.replaceState(state, '', finalPath);
+        } else {
+          window.history.pushState(state, '', finalPath);
+        }
+
+        // Update state to trigger re-render
+        console.log('✅ [Navigate] Setting currentPath to:', path);
+        setCurrentPath(path);
+      }, []);
+
+      const updateParams = useCallback((newParams) => {
+        setParams(newParams);
+      }, []);
+
+      // Handle browser back/forward buttons
+      useEffect(() => {
+        const handlePopState = () => {
+          const path = window.location.pathname;
+          console.log('⬅️ [PopState] Path changed to:', path);
+          setCurrentPath(path);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+      }, []);
+
+      const value = {
+        currentPath,
+        params,
+        query,
+        navigate,
+        updateParams,
+      };
+
+      console.log('📍 [Router] Current state:', { currentPath, params });
+
+      return (
+        <RouterContext.Provider value={value}>
+          {children}
+        </RouterContext.Provider>
+      );
+    };
+
+    // useRouter Hook
+    const useRouter = () => {
+      const context = useContext(RouterContext);
+      if (!context) {
+        throw new Error('useRouter must be used within a Router');
+      }
+      return context;
+    };
+
+    // useNavigate Hook
+    const useNavigate = () => {
+      const { navigate } = useRouter();
+      return navigate;
+    };
+
+    // Link Component
+    const Link = ({ to, replace = false, query = {}, state = null, className = '', style = {}, onClick, children, ...props }) => {
+      const navigate = useNavigate();
+
+      const handleClick = (e) => {
+        console.log('🔗 [Link] Clicked:', to);
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (onClick) {
+          const result = onClick(e);
+          if (result === false || e.defaultPrevented) {
+            console.log('❌ [Link] Navigation cancelled by onClick');
+            return;
+          }
+        }
+
+        console.log('✨ [Link] Calling navigate with:', { to, replace, query, state });
+        navigate(to, { replace, query, state });
+      };
+
+      return (
+        <a
+          href={to}
+          onClick={handleClick}
+          className={className}
+          style={{
+            cursor: 'pointer',
+            textDecoration: 'none',
+            color: 'inherit',
+            ...style
+          }}
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    };
+
+    // Page Components
+    const HomePage = () => {
+      const { currentPath } = useRouter();
+
+      console.log('🏠 [HomePage] Rendering, path:', currentPath);
+
+      return (
+        <div className="page">
+          <h1>🏠 Home Page</h1>
+          <p><strong>Current Path:</strong> {currentPath}</p>
+          <div style={{ marginTop: '20px' }}>
+            <Link to="/about" className="link-button">
+              Go to About
+            </Link>
+            <Link to="/contact" className="link-button">
+              Go to Contact
+            </Link>
+            <Link to="/users/123" className="link-button">
+              Go to User 123
+            </Link>
+          </div>
+        </div>
+      );
+    };
+
+    const AboutPage = () => {
+      const { currentPath } = useRouter();
+
+      console.log('ℹ️ [AboutPage] Rendering, path:', currentPath);
+
+      return (
+        <div className="page">
+          <h1>ℹ️ About Page</h1>
+          <p><strong>Current Path:</strong> {currentPath}</p>
+          <p>This is the about page.</p>
+          <Link to="/" className="link-button" style={{ backgroundColor: '#f44336' }}>
+            Back to Home
+          </Link>
+        </div>
+      );
+    };
+
+    const ContactPage = () => {
+      const { currentPath } = useRouter();
+
+      console.log('📧 [ContactPage] Rendering, path:', currentPath);
+
+      return (
+        <div className="page">
+          <h1>📧 Contact Page</h1>
+          <p><strong>Current Path:</strong> {currentPath}</p>
+          <p>This is the contact page.</p>
+          <Link to="/" className="link-button" style={{ backgroundColor: '#f44336' }}>
+            Back to Home
+          </Link>
+        </div>
+      );
+    };
+
+    const UserPage = ({ id }) => {
+      const { currentPath } = useRouter();
+
+      console.log('👤 [UserPage] Rendering, path:', currentPath, 'id:', id);
+
+      return (
+        <div className="page">
+          <h1>👤 User Page</h1>
+          <p><strong>Current Path:</strong> {currentPath}</p>
+          <p><strong>User ID:</strong> {id}</p>
+          <Link to="/" className="link-button" style={{ backgroundColor: '#f44336' }}>
+            Back to Home
+          </Link>
+        </div>
+      );
+    };
+
+    // Simple Router (without RouteGuard for simplicity)
+    const SimpleRoutes = () => {
+      const { currentPath } = useRouter();
+
+      console.log('🔀 [SimpleRoutes] Rendering, path:', currentPath);
+
+      // Simple routing logic
+      if (currentPath === '/' || currentPath === '') {
+        return <HomePage />;
+      } else if (currentPath === '/about') {
+        return <AboutPage />;
+      } else if (currentPath === '/contact') {
+        return <ContactPage />;
+      } else if (currentPath.startsWith('/users/')) {
+        const id = currentPath.split('/')[2];
+        return <UserPage id={id} />;
+      } else {
+        return (
+          <div className="page">
+            <h1>404 - Page Not Found</h1>
+            <p>Path: {currentPath}</p>
+            <Link to="/" className="link-button">Go Home</Link>
+          </div>
+        );
+      }
+    };
+
+    // Main App
+    const App = () => {
+      return (
+        <Router>
+          <div>
+            <div className="status">
+              <h2>✅ Link Component Test</h2>
+              <p><strong>Instructions:</strong></p>
+              <ol>
+                <li>Open the browser console (F12)</li>
+                <li>Click the links below</li>
+                <li>Watch the console logs and URL bar</li>
+                <li>The page should change without reloading</li>
+              </ol>
+            </div>
+            <SimpleRoutes />
+          </div>
+        </Router>
+      );
+    };
+
+    // Render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

@@ -13,6 +13,7 @@
 - 🚀 **High Performance** - Subscriber pattern prevents unnecessary re-renders
 - 🔐 **Comprehensive Auth** - JWT tokens, automatic refresh, cross-tab sync
 - 🛡️ **Advanced Permissions** - Role-based + permission-based access control
+- 🔒 **Security First** - Prevent route enumeration attacks by showing 404 for unauthorized routes (secure by default)
 - 🧭 **Flexible Routing** - Nested routes with automatic child matching, parameters, query strings, Link component for declarative navigation
 - 🍞 **Smart Breadcrumbs** - Automatic breadcrumb generation from route hierarchy with custom component support
 - 🎯 **Error Handling** - Built-in error boundaries with react-toastify notifications (addSuccess, addError, addWarning, addInfo)
@@ -1017,13 +1018,34 @@ const App = () => (
 - `pageComponents` - Object mapping component strings to actual components
 - `notFoundComponent` - Custom 404 component
 - `loadingComponent` - Custom loading component
+- `hideUnauthorizedRoutes` - Show 404 for unauthorized routes instead of "Access Denied" (default: `true` for security)
 
 **How it works:**
 1. Gets current path from router context
-2. Finds matching route (including nested children)
-3. Applies RouteGuard for permission checking
-4. Renders the appropriate page component
-5. Passes `params` and `route` props to the component
+2. **Security**: Filters routes based on user permissions (if `hideUnauthorizedRoutes` is true)
+3. Finds matching route (including nested children) from accessible routes only
+4. Applies RouteGuard for additional permission checking
+5. Renders the appropriate page component
+6. Passes `params` and `route` props to the component
+
+**Security Feature (v2.2.1+):**
+```jsx
+// Secure by default - unauthorized routes show 404
+<Routes routeConfig={routeConfig} />
+
+// Explicitly disable for backward compatibility
+<Routes routeConfig={routeConfig} hideUnauthorizedRoutes={false} />
+```
+
+When `hideUnauthorizedRoutes={true}` (default):
+- ✅ Protected routes appear as 404 when user lacks access
+- ✅ Prevents attackers from discovering your route structure
+- ✅ More secure - no information disclosure
+
+When `hideUnauthorizedRoutes={false}`:
+- ❌ Shows "Authentication Required" or "Access Denied" screens
+- ❌ Reveals that protected routes exist
+- ℹ️ Use only if you have a specific reason to expose route existence
 
 ### RouteGuard
 
@@ -1641,6 +1663,29 @@ initializeAuth({
 
 ## Migration Guide
 
+### From v2.2.0 to v2.2.1 (Security Update)
+
+**What Changed:**
+Version 2.2.1 introduces a security fix that prevents route enumeration attacks. By default, unauthorized routes now show 404 instead of "Access Denied" screens.
+
+**Action Required:**
+✅ **Most users: No action required** - The change is backward compatible and more secure.
+
+**If you need the old behavior:**
+```jsx
+// Show "Access Denied" screens (old behavior)
+<Routes
+  routeConfig={routeConfig}
+  hideUnauthorizedRoutes={false}  // Add this line
+/>
+```
+
+**Why this change?**
+Showing "Access Denied" screens reveals that routes exist, allowing attackers to discover your application structure. The new default (404 for unauthorized routes) prevents this information disclosure.
+
+**Recommendation:**
+Keep the secure default (`hideUnauthorizedRoutes={true}`) unless you have a specific reason to expose route existence.
+
 ### From React Router + Context Auth
 
 #### Before (React Router + Context)
@@ -1818,6 +1863,38 @@ const adminRoute = {
 ```
 
 ### Security Best Practices
+
+#### Route Enumeration Protection (v2.2.1+)
+
+**The Problem:**
+Showing "Unauthorized" or "Access Denied" screens reveals that protected routes exist, allowing attackers to enumerate your application's route structure.
+
+**The Solution:**
+React Auth Router v2.2.1+ is **secure by default**. Unauthorized routes now show 404 instead of access denied screens.
+
+```jsx
+// ✅ Secure by default (v2.2.1+)
+const App = () => (
+  <Router>
+    <Routes routeConfig={routeConfig} />
+  </Router>
+);
+// Result: Unauthorized routes appear as 404 (secure)
+
+// ❌ Only disable if you have a specific reason
+const App = () => (
+  <Router>
+    <Routes routeConfig={routeConfig} hideUnauthorizedRoutes={false} />
+  </Router>
+);
+// Result: Shows "Access Denied" screens (reveals route existence)
+```
+
+**Security Benefits:**
+- ✅ Attackers cannot discover your route structure
+- ✅ Protected admin panels remain hidden from enumeration
+- ✅ Unauthorized users see same 404 as non-existent routes
+- ✅ Complies with security best practices (OWASP)
 
 #### JWT Token Security
 

@@ -31,16 +31,19 @@ export const Link = ({
   const handleClick = (e) => {
     // Prevent default link behavior (page reload)
     e.preventDefault();
+    e.stopPropagation();
 
     // Call custom onClick handler if provided
     if (onClick) {
-      onClick(e);
+      const result = onClick(e);
+      // If onClick returns false or calls preventDefault, don't navigate
+      if (result === false || e.defaultPrevented) {
+        return;
+      }
     }
 
-    // Only navigate if default wasn't prevented by custom handler
-    if (!e.defaultPrevented) {
-      navigate(to, { replace, query, state });
-    }
+    // Perform navigation
+    navigate(to, { replace, query, state });
   };
 
   return (
