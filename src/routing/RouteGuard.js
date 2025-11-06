@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { usePermissions, useAuth } from "../auth/hooks";
+import { useNavigate } from "./Router";
 import { Shield, Lock } from "lucide-react";
 
 export const RouteGuard = ({
@@ -18,6 +19,20 @@ export const RouteGuard = ({
     hasAllPermissions,
   } = usePermissions();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect authenticated users away from guest-only routes
+  useEffect(() => {
+    if (route.requireGuest && isAuthenticated) {
+      const redirectPath = route.authenticatedRedirect || "/";
+      navigate(redirectPath, { replace: true });
+    }
+  }, [route.requireGuest, route.authenticatedRedirect, isAuthenticated, navigate]);
+
+  // If this is a guest-only route and user is authenticated, show loading while redirecting
+  if (route.requireGuest && isAuthenticated) {
+    return fallback || <DefaultRedirecting />;
+  }
 
   if (route.requireAuth && !isAuthenticated) {
     if (UnauthorizedComponent) {
@@ -174,6 +189,40 @@ const DefaultForbidden = ({ route, message }) => (
       <p style={{ color: "#6b7280", margin: 0 }}>
         {message || "You do not have permission to access this page."}
       </p>
+    </div>
+  </div>
+);
+
+const DefaultRedirecting = () => (
+  <div
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#f9fafb",
+    }}
+  >
+    <div style={{ textAlign: "center" }}>
+      <div
+        style={{
+          width: "3rem",
+          height: "3rem",
+          border: "4px solid #e5e7eb",
+          borderTopColor: "#2563eb",
+          borderRadius: "50%",
+          margin: "0 auto 1rem",
+          animation: "spin 1s linear infinite",
+        }}
+      />
+      <p style={{ color: "#6b7280", margin: 0 }}>Redirecting...</p>
+      <style>
+        {`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   </div>
 );

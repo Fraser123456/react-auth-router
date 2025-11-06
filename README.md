@@ -384,6 +384,20 @@ const routeConfig = createRouteConfig({
         description: "Welcome to MyApp",
       },
     },
+    // Guest-only routes (login, register) - redirects authenticated users
+    {
+      path: "/login",
+      component: "LoginPage",
+      title: "Login",
+      requireGuest: true, // Only accessible when NOT logged in
+      authenticatedRedirect: "/dashboard", // Optional: where to redirect authenticated users
+    },
+    {
+      path: "/register",
+      component: "RegisterPage",
+      title: "Register",
+      requireGuest: true, // Defaults to redirecting to "/"
+    },
   ],
   protected: [
     {
@@ -623,6 +637,50 @@ const routeConfig = createRouteConfig({
     },
   ],
 });
+```
+
+### Guest-Only Routes (v2.2.2+)
+
+Prevent authenticated users from accessing routes like login and registration pages.
+
+```jsx
+const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/login",
+      component: "LoginPage",
+      title: "Login",
+      requireGuest: true, // Only accessible when NOT logged in
+      authenticatedRedirect: "/dashboard", // Optional: where to redirect (default: "/")
+    },
+    {
+      path: "/register",
+      component: "RegisterPage",
+      title: "Register",
+      requireGuest: true, // Redirects to "/" by default
+    },
+    {
+      path: "/forgot-password",
+      component: "ForgotPasswordPage",
+      title: "Forgot Password",
+      requireGuest: true,
+      authenticatedRedirect: "/settings/security", // Custom redirect
+    },
+  ],
+});
+```
+
+**How it works:**
+1. When an authenticated user navigates to a `requireGuest: true` route
+2. They are automatically redirected to `authenticatedRedirect` path (or "/" by default)
+3. Shows a brief "Redirecting..." message during redirect
+4. Prevents confusion and improves UX
+
+**Example scenario:**
+```
+User logs in → Redirected to /dashboard
+User manually types /login in URL → Automatically redirected to /dashboard
+Result: Clean UX, no confusion
 ```
 
 ## Permissions
@@ -1387,6 +1445,8 @@ interface Route {
   showInNav?: boolean; // Show in navigation menu
   exact?: boolean; // Exact path matching
   requireAuth?: boolean; // Requires authentication
+  requireGuest?: boolean; // Only accessible to unauthenticated users (v2.2.2+)
+  authenticatedRedirect?: string; // Where to redirect authenticated users (default: "/") (v2.2.2+)
   requiredRoles?: string[]; // Required user roles
   requiredPermissions?: string[]; // Required permissions
   requireAll?: boolean; // Require ALL roles/permissions vs ANY
@@ -1662,6 +1722,34 @@ initializeAuth({
 ```
 
 ## Migration Guide
+
+### From v2.2.1 to v2.2.2 (Bug Fix - Guest-Only Routes)
+
+**What Changed:**
+Version 2.2.2 fixes a UX/security issue where authenticated users could still access login and registration pages by typing the URL directly.
+
+**New Feature: `requireGuest` property**
+```jsx
+const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/login",
+      component: "LoginPage",
+      requireGuest: true, // NEW: Only accessible when NOT logged in
+      authenticatedRedirect: "/dashboard", // NEW: Optional custom redirect
+    },
+  ],
+});
+```
+
+**Action Required:**
+Add `requireGuest: true` to routes that should only be accessible to unauthenticated users (login, register, forgot-password, etc.).
+
+**Benefits:**
+- ✅ Prevents logged-in users from seeing login/register pages
+- ✅ Automatically redirects authenticated users to appropriate page
+- ✅ Cleaner UX and less confusion
+- ✅ Better security (prevents authenticated users from accessing password reset flows)
 
 ### From v2.2.0 to v2.2.1 (Security Update)
 
@@ -1959,6 +2047,42 @@ const routeConfig = createRouteConfig({
   ],
 });
 ```
+
+#### Guest-Only Routes (v2.2.2+)
+
+Prevent authenticated users from accessing authentication pages:
+
+```jsx
+// ✅ Proper guest-only route configuration
+const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/login",
+      component: "LoginPage",
+      requireGuest: true, // Redirects authenticated users
+      authenticatedRedirect: "/dashboard",
+    },
+    {
+      path: "/register",
+      component: "RegisterPage",
+      requireGuest: true,
+    },
+    {
+      path: "/forgot-password",
+      component: "ForgotPasswordPage",
+      requireGuest: true,
+    },
+  ],
+});
+
+// ❌ Without requireGuest - bad UX
+// Logged-in users can still access /login and see the login form
+```
+
+**Benefits:**
+- Prevents confusion when users manually type `/login` after authentication
+- Stops password reset flows for authenticated users (security)
+- Cleaner UX and better user experience
 
 ### Code Organization
 

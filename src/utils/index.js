@@ -149,6 +149,11 @@ export const routeUtils = {
       user,
     } = context;
 
+    // Check guest-only requirement (route only accessible to unauthenticated users)
+    if (route.requireGuest && isAuthenticated) {
+      return false;
+    }
+
     // Check authentication requirement
     if (route.requireAuth && !isAuthenticated) {
       return false;
