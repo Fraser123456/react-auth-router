@@ -181,6 +181,11 @@ declare module "react-auth-router" {
 
   export interface BreadcrumbProps {
     routeConfig?: RouteConfig;
+    className?: string,
+    customBreadcrumbComponent?: CustomBreadcrumbComponent,
+    showHome?: boolean,
+    homeTitle?: string,
+    homePath?: string
   }
 
   export function Breadcrumb(props?: BreadcrumbProps): JSX.Element;
