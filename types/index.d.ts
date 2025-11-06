@@ -101,6 +101,8 @@ declare module "react-auth-router" {
     showInNav?: boolean;
     exact?: boolean;
     requireAuth?: boolean;
+    requireGuest?: boolean;
+    authenticatedRedirect?: string;
     requiredRoles?: string[];
     requiredPermissions?: string[];
     requireAll?: boolean;
@@ -164,6 +166,7 @@ declare module "react-auth-router" {
     pageComponents?: Record<string, ComponentType>;
     notFoundComponent?: ComponentType;
     loadingComponent?: ComponentType;
+    hideUnauthorizedRoutes?: boolean;
   }
 
   export function Routes(props: RoutesProps): JSX.Element;
@@ -219,11 +222,24 @@ declare module "react-auth-router" {
     public?: Route[];
     protected?: Route[];
   }): RouteConfig;
+  export interface RouteAccessContext {
+    isAuthenticated: boolean;
+    hasRole: (role: string) => boolean;
+    hasPermission: (permission: string) => boolean;
+    hasAnyRole: (roles: string[]) => boolean;
+    hasAnyPermission: (permissions: string[]) => boolean;
+    hasAllRoles: (roles: string[]) => boolean;
+    hasAllPermissions: (permissions: string[]) => boolean;
+    user: User | null;
+  }
+
   export const routeUtils: {
     getAllRoutes: (routeConfig: RouteConfig) => Route[];
     findMatchingRoute: (path: string, routes: Route[]) => Route | undefined;
     extractParams: (path: string, routePath: string) => Record<string, string>;
     generateBreadcrumbs: (route: Route, routes: Route[]) => any[];
+    canAccessRoute: (route: Route, context: RouteAccessContext) => boolean;
+    filterAccessibleRoutes: (routes: Route[], context: RouteAccessContext) => Route[];
   };
 
   export const defaultConfig: any;
