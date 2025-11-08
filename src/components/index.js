@@ -32,8 +32,8 @@ export const Routes = ({
   }
 
   // Check if we're on the root path and need to redirect
-  const isRootPath = currentPath === "/" || currentPath === "";
-  const hasDefaultRoutes = defaultRoute || authenticatedDefaultRoute || unauthenticatedDefaultRoute;
+  const isRootPath = currentPath === "/" || currentPath === "" || !currentPath;
+  const hasDefaultRoutes = !!(defaultRoute || authenticatedDefaultRoute || unauthenticatedDefaultRoute);
 
   // Handle default route redirects
   useEffect(() => {
@@ -53,6 +53,7 @@ export const Routes = ({
 
     // Perform redirect if needed (use replace to avoid adding to history)
     if (redirectTo && redirectTo !== currentPath) {
+      console.log('[Routes] Redirecting from', currentPath, 'to', redirectTo);
       navigate(redirectTo, { replace: true });
     }
   }, [
@@ -67,13 +68,8 @@ export const Routes = ({
     navigate,
   ]);
 
-  // Show loading state while we're on "/" and redirecting
-  if (isRootPath && hasDefaultRoutes) {
-    if (loading) {
-      // Still loading auth state
-      return LoadingComponent ? <LoadingComponent /> : <DefaultLoading />;
-    }
-    // Auth loaded, redirect will happen in useEffect, show loading briefly
+  // Show loading state while auth is loading on root path
+  if (isRootPath && hasDefaultRoutes && loading) {
     return LoadingComponent ? <LoadingComponent /> : <DefaultLoading />;
   }
 
@@ -102,7 +98,12 @@ export const Routes = ({
     }
   }, [currentRoute]);
 
+  // If no route found and we're on root path with default routes, show loading while redirect happens
   if (!currentRoute) {
+    if (isRootPath && hasDefaultRoutes && !loading) {
+      // Auth is loaded but redirect hasn't happened yet, show loading briefly
+      return LoadingComponent ? <LoadingComponent /> : <DefaultLoading />;
+    }
     return NotFoundComponent ? <NotFoundComponent /> : <DefaultNotFound />;
   }
 
