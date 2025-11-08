@@ -31,10 +31,14 @@ export const Routes = ({
     throw new Error("Routes component requires routeConfig prop");
   }
 
+  // Check if we're on the root path and need to redirect
+  const isRootPath = currentPath === "/" || currentPath === "";
+  const hasDefaultRoutes = defaultRoute || authenticatedDefaultRoute || unauthenticatedDefaultRoute;
+
   // Handle default route redirects
   useEffect(() => {
-    // Only redirect if we're on the root path and not loading
-    if (loading || (currentPath !== "/" && currentPath !== "")) return;
+    // Only redirect if we're on the root path, not loading, and have default routes configured
+    if (!isRootPath || loading || !hasDefaultRoutes) return;
 
     let redirectTo = null;
 
@@ -53,13 +57,25 @@ export const Routes = ({
     }
   }, [
     currentPath,
+    isRootPath,
     isAuthenticated,
     loading,
     defaultRoute,
     authenticatedDefaultRoute,
     unauthenticatedDefaultRoute,
+    hasDefaultRoutes,
     navigate,
   ]);
+
+  // Show loading state while we're on "/" and redirecting
+  if (isRootPath && hasDefaultRoutes) {
+    if (loading) {
+      // Still loading auth state
+      return LoadingComponent ? <LoadingComponent /> : <DefaultLoading />;
+    }
+    // Auth loaded, redirect will happen in useEffect, show loading briefly
+    return LoadingComponent ? <LoadingComponent /> : <DefaultLoading />;
+  }
 
   const allRoutes = routeUtils.getAllRoutes(routeConfig);
 
@@ -158,6 +174,40 @@ const DefaultNotFound = () => (
       >
         Go Back
       </button>
+    </div>
+  </div>
+);
+
+const DefaultLoading = () => (
+  <div
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#f9fafb",
+    }}
+  >
+    <div style={{ textAlign: "center" }}>
+      <div
+        style={{
+          width: "3rem",
+          height: "3rem",
+          border: "4px solid #e5e7eb",
+          borderTopColor: "#2563eb",
+          borderRadius: "50%",
+          margin: "0 auto 1rem",
+          animation: "spin 1s linear infinite",
+        }}
+      />
+      <p style={{ color: "#6b7280", margin: 0 }}>Loading...</p>
+      <style>
+        {`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   </div>
 );
