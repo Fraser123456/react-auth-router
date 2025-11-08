@@ -15,6 +15,7 @@
 - 🛡️ **Advanced Permissions** - Role-based + permission-based access control
 - 🔒 **Security First** - Prevent route enumeration attacks by showing 404 for unauthorized routes (secure by default)
 - 🧭 **Flexible Routing** - Nested routes with automatic child matching, parameters, query strings, Link component for declarative navigation
+- 🏠 **Smart Default Routes** - Automatically redirect users to appropriate landing pages based on authentication state (v2.3.0+)
 - 🍞 **Smart Breadcrumbs** - Automatic breadcrumb generation from route hierarchy with custom component support
 - 🎯 **Error Handling** - Built-in error boundaries with react-toastify notifications (addSuccess, addError, addWarning, addInfo)
 - 📱 **Mobile Ready** - Responsive navigation with mobile breakpoints
@@ -95,7 +96,11 @@ function App() {
       <Navigation routeConfig={routeConfig} />
       <main>
         <Breadcrumb routeConfig={routeConfig} />
-        <Routes routeConfig={routeConfig} />
+        <Routes
+          routeConfig={routeConfig}
+          authenticatedDefaultRoute="/dashboard"
+          unauthenticatedDefaultRoute="/"
+        />
       </main>
     </Router>
   );
@@ -683,6 +688,105 @@ User manually types /login in URL → Automatically redirected to /dashboard
 Result: Clean UX, no confusion
 ```
 
+### Default Routes (v2.3.0+)
+
+Handle the "/" root path by automatically redirecting users to different routes based on their authentication state.
+
+**The Problem:**
+You can't define "/" for both public and protected routes. When users land on the root path, you need to redirect them to the appropriate starting page based on whether they're logged in.
+
+**The Solution:**
+Use default route props on the `Routes` component to specify where users should be redirected when they land on "/".
+
+```jsx
+import { Router, Routes, createRouteConfig } from "react-auth-router";
+
+const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/home",
+      component: "HomePage",
+      title: "Home",
+    },
+    {
+      path: "/login",
+      component: "LoginPage",
+      title: "Login",
+    },
+  ],
+  protected: [
+    {
+      path: "/dashboard",
+      component: "DashboardPage",
+      title: "Dashboard",
+      requireAuth: true,
+    },
+  ],
+});
+
+function App() {
+  return (
+    <Router>
+      <Routes
+        routeConfig={routeConfig}
+        // Redirect authenticated users to /dashboard when they visit "/"
+        authenticatedDefaultRoute="/dashboard"
+        // Redirect unauthenticated users to /home when they visit "/"
+        unauthenticatedDefaultRoute="/home"
+      />
+    </Router>
+  );
+}
+```
+
+**Available Props:**
+
+- **`defaultRoute`** - Default redirect for all users (lowest priority)
+- **`authenticatedDefaultRoute`** - Where to redirect authenticated users on "/" (overrides `defaultRoute`)
+- **`unauthenticatedDefaultRoute`** - Where to redirect unauthenticated users on "/" (overrides `defaultRoute`)
+
+**Priority Order:**
+1. `authenticatedDefaultRoute` (if user is authenticated)
+2. `unauthenticatedDefaultRoute` (if user is not authenticated)
+3. `defaultRoute` (fallback for both)
+
+**Examples:**
+
+```jsx
+// Simple default for everyone
+<Routes
+  routeConfig={routeConfig}
+  defaultRoute="/home"
+/>
+
+// Different defaults based on auth state (recommended)
+<Routes
+  routeConfig={routeConfig}
+  authenticatedDefaultRoute="/dashboard"
+  unauthenticatedDefaultRoute="/home"
+/>
+
+// With fallback
+<Routes
+  routeConfig={routeConfig}
+  authenticatedDefaultRoute="/dashboard"
+  unauthenticatedDefaultRoute="/home"
+  defaultRoute="/welcome"  // Used if auth state is unclear
+/>
+```
+
+**How it works:**
+1. When users navigate to "/" or the app first loads at "/"
+2. The Routes component checks authentication state
+3. Redirects to the appropriate default route using `replace: true` (doesn't add to browser history)
+4. Waits for auth loading to complete before redirecting (prevents flash of wrong content)
+
+**Benefits:**
+- ✅ Clean UX - users always land on the right starting page
+- ✅ No need to define "/" in your route config
+- ✅ Automatic redirects based on authentication
+- ✅ No browser history pollution (uses replace instead of push)
+
 ## Permissions
 
 ### Role-Based Access Control (RBAC)
@@ -1077,6 +1181,9 @@ const App = () => (
 - `notFoundComponent` - Custom 404 component
 - `loadingComponent` - Custom loading component
 - `hideUnauthorizedRoutes` - Show 404 for unauthorized routes instead of "Access Denied" (default: `true` for security)
+- `defaultRoute` - Default route to redirect to when path is "/" (v2.3.0+)
+- `authenticatedDefaultRoute` - Default route for authenticated users on "/" (v2.3.0+)
+- `unauthenticatedDefaultRoute` - Default route for unauthenticated users on "/" (v2.3.0+)
 
 **How it works:**
 1. Gets current path from router context
@@ -1722,6 +1829,76 @@ initializeAuth({
 ```
 
 ## Migration Guide
+
+### From v2.2.2 to v2.3.0 (New Feature - Default Routes)
+
+**What's New:**
+Version 2.3.0 adds default route functionality to handle the "/" root path intelligently based on authentication state.
+
+**New Props for Routes Component:**
+```jsx
+<Routes
+  routeConfig={routeConfig}
+  defaultRoute="/home"                          // NEW: Default for all users
+  authenticatedDefaultRoute="/dashboard"        // NEW: Default for authenticated users
+  unauthenticatedDefaultRoute="/home"          // NEW: Default for unauthenticated users
+/>
+```
+
+**Action Required:**
+✅ **No breaking changes** - This is fully backward compatible!
+
+**Optional Upgrade:**
+If you're currently handling "/" with route config or custom logic, you can simplify by using the new default route props:
+
+**Before (v2.2.2):**
+```jsx
+// Had to define "/" in route config or handle redirects manually
+const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/",
+      component: HomePage,
+      // Custom redirect logic in component
+    },
+  ],
+});
+```
+
+**After (v2.3.0):**
+```jsx
+// Cleaner - just specify default routes as props
+const routeConfig = createRouteConfig({
+  public: [
+    {
+      path: "/home",
+      component: HomePage,
+    },
+  ],
+  protected: [
+    {
+      path: "/dashboard",
+      component: DashboardPage,
+      requireAuth: true,
+    },
+  ],
+});
+
+<Routes
+  routeConfig={routeConfig}
+  authenticatedDefaultRoute="/dashboard"
+  unauthenticatedDefaultRoute="/home"
+/>
+```
+
+**Benefits:**
+- ✅ No need to define "/" in route config
+- ✅ Automatic authentication-aware redirects
+- ✅ Cleaner separation of concerns
+- ✅ No browser history pollution (uses replace)
+
+**Use Case:**
+Perfect for when you want different landing pages for logged-in vs. logged-out users, without having to define "/" in your route configuration.
 
 ### From v2.2.1 to v2.2.2 (Bug Fix - Guest-Only Routes)
 

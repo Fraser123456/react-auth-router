@@ -11,9 +11,13 @@ export const Routes = ({
   notFoundComponent: NotFoundComponent,
   loadingComponent: LoadingComponent,
   hideUnauthorizedRoutes = true, // Secure by default - show 404 for unauthorized routes
+  defaultRoute, // Default route for all users
+  authenticatedDefaultRoute, // Default route for authenticated users (overrides defaultRoute)
+  unauthenticatedDefaultRoute, // Default route for unauthenticated users (overrides defaultRoute)
 }) => {
   const { currentPath, params } = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, loading } = useAuth();
   const {
     hasRole,
     hasPermission,
@@ -26,6 +30,36 @@ export const Routes = ({
   if (!routeConfig) {
     throw new Error("Routes component requires routeConfig prop");
   }
+
+  // Handle default route redirects
+  useEffect(() => {
+    // Only redirect if we're on the root path and not loading
+    if (loading || (currentPath !== "/" && currentPath !== "")) return;
+
+    let redirectTo = null;
+
+    // Determine redirect target based on authentication state
+    if (isAuthenticated && authenticatedDefaultRoute) {
+      redirectTo = authenticatedDefaultRoute;
+    } else if (!isAuthenticated && unauthenticatedDefaultRoute) {
+      redirectTo = unauthenticatedDefaultRoute;
+    } else if (defaultRoute) {
+      redirectTo = defaultRoute;
+    }
+
+    // Perform redirect if needed (use replace to avoid adding to history)
+    if (redirectTo && redirectTo !== currentPath) {
+      navigate(redirectTo, { replace: true });
+    }
+  }, [
+    currentPath,
+    isAuthenticated,
+    loading,
+    defaultRoute,
+    authenticatedDefaultRoute,
+    unauthenticatedDefaultRoute,
+    navigate,
+  ]);
 
   const allRoutes = routeUtils.getAllRoutes(routeConfig);
 

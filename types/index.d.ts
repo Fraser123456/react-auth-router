@@ -167,6 +167,9 @@ declare module "react-auth-router" {
     notFoundComponent?: ComponentType;
     loadingComponent?: ComponentType;
     hideUnauthorizedRoutes?: boolean;
+    defaultRoute?: string;
+    authenticatedDefaultRoute?: string;
+    unauthenticatedDefaultRoute?: string;
   }
 
   export function Routes(props: RoutesProps): JSX.Element;
