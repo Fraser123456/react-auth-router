@@ -1360,6 +1360,52 @@ navigate("/users", {
 
 **Note:** For declarative navigation in JSX, use the `Link` component instead. See [Link Component](#link-component) section.
 
+#### `useGoBack()`
+
+Navigate back in history (v2.3.0+).
+
+```jsx
+const goBack = useGoBack();
+
+const BackButton = () => (
+  <button onClick={goBack}>Go Back</button>
+);
+```
+
+#### `useGoForward()`
+
+Navigate forward in history (v2.3.0+).
+
+```jsx
+const goForward = useGoForward();
+
+const ForwardButton = () => (
+  <button onClick={goForward}>Go Forward</button>
+);
+```
+
+#### `useHistory()`
+
+Access multiple history navigation functions (v2.3.0+).
+
+```jsx
+const { goBack, goForward, go } = useHistory();
+
+const NavigationButtons = () => (
+  <div>
+    <button onClick={goBack}>Back</button>
+    <button onClick={goForward}>Forward</button>
+    <button onClick={() => go(-2)}>Go back 2 pages</button>
+    <button onClick={() => go(1)}>Go forward 1 page</button>
+  </div>
+);
+```
+
+**Available from `useHistory()`:**
+- `goBack()` - Go back one page
+- `goForward()` - Go forward one page
+- `go(delta)` - Go to a specific point in history (negative = back, positive = forward)
+
 #### `useParams()`
 
 Route parameters only.
@@ -1830,12 +1876,14 @@ initializeAuth({
 
 ## Migration Guide
 
-### From v2.2.2 to v2.3.0 (New Feature - Default Routes)
+### From v2.2.2 to v2.3.0 (New Features - Default Routes & Navigation History)
 
 **What's New:**
-Version 2.3.0 adds default route functionality to handle the "/" root path intelligently based on authentication state.
+Version 2.3.0 adds two major features:
+1. Default route functionality to handle the "/" root path intelligently
+2. Navigation history hooks for programmatic back/forward navigation
 
-**New Props for Routes Component:**
+**1. New Props for Routes Component:**
 ```jsx
 <Routes
   routeConfig={routeConfig}
@@ -1843,6 +1891,23 @@ Version 2.3.0 adds default route functionality to handle the "/" root path intel
   authenticatedDefaultRoute="/dashboard"        // NEW: Default for authenticated users
   unauthenticatedDefaultRoute="/home"          // NEW: Default for unauthenticated users
 />
+```
+
+**2. New Navigation History Hooks:**
+```jsx
+import { useGoBack, useGoForward, useHistory } from "react-auth-router";
+
+// Simple back button
+const goBack = useGoBack();
+<button onClick={goBack}>Back</button>
+
+// Forward button
+const goForward = useGoForward();
+<button onClick={goForward}>Forward</button>
+
+// Full history control
+const { goBack, goForward, go } = useHistory();
+<button onClick={() => go(-2)}>Go back 2 pages</button>
 ```
 
 **Action Required:**

@@ -128,12 +128,24 @@ declare module "react-auth-router" {
     params: Record<string, string>;
     query: Record<string, string>;
     navigate: (path: string, options?: any) => void;
+    goBack: () => void;
+    goForward: () => void;
+    go: (delta: number) => void;
     basePath: string;
+  }
+
+  export interface HistoryState {
+    goBack: () => void;
+    goForward: () => void;
+    go: (delta: number) => void;
   }
 
   export function Router(props: RouterProps): JSX.Element;
   export function useRouter(): RouterState;
   export function useNavigate(): RouterState["navigate"];
+  export function useGoBack(): () => void;
+  export function useGoForward(): () => void;
+  export function useHistory(): HistoryState;
   export function useParams(): RouterState["params"];
   export function useQuery(): RouterState["query"];
 

@@ -1,6 +1,6 @@
 import { useRouter as useRouterHook } from "./Router";
 
-export { Router, useRouter, useNavigate } from "./Router";
+export { Router, useRouter, useNavigate, useGoBack, useGoForward, useHistory } from "./Router";
 export { RouteGuard } from "./RouteGuard";
 export { Routes } from "./Routes";
 export { Link } from "./Link";

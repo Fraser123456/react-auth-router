@@ -74,6 +74,24 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
     setParams(newParams);
   }, []);
 
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.history.back();
+    }
+  }, []);
+
+  const goForward = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.history.forward();
+    }
+  }, []);
+
+  const go = useCallback((delta) => {
+    if (typeof window !== "undefined") {
+      window.history.go(delta);
+    }
+  }, []);
+
   return (
     <RouterContext.Provider
       value={{
@@ -81,6 +99,9 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
         params,
         query,
         navigate,
+        goBack,
+        goForward,
+        go,
         basePath,
         updateParams,
       }}
@@ -104,4 +125,32 @@ export const useNavigate = () => {
     throw new Error("useNavigate must be used within a Router component");
   }
   return context.navigate;
+};
+
+export const useGoBack = () => {
+  const context = useContext(RouterContext);
+  if (!context) {
+    throw new Error("useGoBack must be used within a Router component");
+  }
+  return context.goBack;
+};
+
+export const useGoForward = () => {
+  const context = useContext(RouterContext);
+  if (!context) {
+    throw new Error("useGoForward must be used within a Router component");
+  }
+  return context.goForward;
+};
+
+export const useHistory = () => {
+  const context = useContext(RouterContext);
+  if (!context) {
+    throw new Error("useHistory must be used within a Router component");
+  }
+  return {
+    goBack: context.goBack,
+    goForward: context.goForward,
+    go: context.go,
+  };
 };

@@ -18,6 +18,9 @@ export {
   Link,
   useRouter,
   useNavigate,
+  useGoBack,
+  useGoForward,
+  useHistory,
   useParams,
   useQuery,
 } from "./routing";
