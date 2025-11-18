@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useRouter } from "./Router";
+import { useRouter, useNavigate } from "./Router";
 import { RouteGuard } from "./RouteGuard";
 import { routeUtils } from "../utils";
 import { useAuth, usePermissions } from "../auth";
@@ -10,9 +10,13 @@ export const Routes = ({
   notFoundComponent: NotFoundComponent,
   loadingComponent: LoadingComponent,
   hideUnauthorizedRoutes = true, // Secure by default - show 404 for unauthorized routes
+  defaultRoute, // Default route for all users
+  authenticatedDefaultRoute, // Default route for authenticated users (overrides defaultRoute)
+  unauthenticatedDefaultRoute, // Default route for unauthenticated users (overrides defaultRoute)
 }) => {
   const { currentPath, updateParams } = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const { isAuthenticated, user, loading } = useAuth();
   const {
     hasRole,
     hasPermission,
@@ -24,6 +28,47 @@ export const Routes = ({
 
   if (!routeConfig) {
     throw new Error("Routes component requires routeConfig prop");
+  }
+
+  // Check if we're on the root path and need to redirect
+  const isRootPath = currentPath === "/" || currentPath === "" || !currentPath;
+  const hasDefaultRoutes = !!(defaultRoute || authenticatedDefaultRoute || unauthenticatedDefaultRoute);
+
+  // Handle default route redirects
+  useEffect(() => {
+    // Only redirect if we're on the root path, not loading, and have default routes configured
+    if (!isRootPath || loading || !hasDefaultRoutes) return;
+
+    let redirectTo = null;
+
+    // Determine redirect target based on authentication state
+    if (isAuthenticated && authenticatedDefaultRoute) {
+      redirectTo = authenticatedDefaultRoute;
+    } else if (!isAuthenticated && unauthenticatedDefaultRoute) {
+      redirectTo = unauthenticatedDefaultRoute;
+    } else if (defaultRoute) {
+      redirectTo = defaultRoute;
+    }
+
+    // Perform redirect if needed (use replace to avoid adding to history)
+    if (redirectTo && redirectTo !== currentPath) {
+      navigate(redirectTo, { replace: true });
+    }
+  }, [
+    currentPath,
+    isRootPath,
+    isAuthenticated,
+    loading,
+    defaultRoute,
+    authenticatedDefaultRoute,
+    unauthenticatedDefaultRoute,
+    hasDefaultRoutes,
+    navigate,
+  ]);
+
+  // Show loading state while auth is loading on root path
+  if (isRootPath && hasDefaultRoutes && loading) {
+    return LoadingComponent ? <LoadingComponent /> : <DefaultLoading />;
   }
 
   const allRoutes = routeUtils.getAllRoutes(routeConfig);
@@ -49,17 +94,11 @@ export const Routes = ({
   const params = useMemo(() => {
     if (!currentRoute) return {};
     const extracted = routeUtils.extractParams(currentPath, currentRoute.path);
-    console.log("[Routes] Extracting params:", {
-      currentPath,
-      routePath: currentRoute.path,
-      extracted
-    });
     return extracted;
   }, [currentPath, currentRoute]);
 
   // Update Router context with extracted params so useParams() works
   useEffect(() => {
-    console.log("[Routes] Updating context params:", params);
     updateParams(params);
   }, [params, updateParams]);
 
@@ -69,16 +108,18 @@ export const Routes = ({
     }
   }, [currentRoute]);
 
+  // If no route found and we're on root path with default routes, show loading while redirect happens
   if (!currentRoute) {
+    if (isRootPath && hasDefaultRoutes && !loading) {
+      // Auth is loaded but redirect hasn't happened yet, show loading briefly
+      return LoadingComponent ? <LoadingComponent /> : <DefaultLoading />;
+    }
     return NotFoundComponent ? <NotFoundComponent /> : <DefaultNotFound />;
   }
 
   if (typeof currentRoute.component === "string") {
     const PageComponent = pageComponents[currentRoute.component];
     if (!PageComponent) {
-      console.error(
-        `Component "${currentRoute.component}" not found in pageComponents`
-      );
       return NotFoundComponent ? <NotFoundComponent /> : <DefaultNotFound />;
     }
 
@@ -141,6 +182,40 @@ const DefaultNotFound = () => (
       >
         Go Back
       </button>
+    </div>
+  </div>
+);
+
+const DefaultLoading = () => (
+  <div
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#f9fafb",
+    }}
+  >
+    <div style={{ textAlign: "center" }}>
+      <div
+        style={{
+          width: "3rem",
+          height: "3rem",
+          border: "4px solid #e5e7eb",
+          borderTopColor: "#2563eb",
+          borderRadius: "50%",
+          margin: "0 auto 1rem",
+          animation: "spin 1s linear infinite",
+        }}
+      />
+      <p style={{ color: "#6b7280", margin: 0 }}>Loading...</p>
+      <style>
+        {`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   </div>
 );
