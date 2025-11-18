@@ -32,15 +32,15 @@ export const Routes = ({
   // This prevents information disclosure by showing 404 for unauthorized routes
   const routesToSearch = hideUnauthorizedRoutes
     ? routeUtils.filterAccessibleRoutes(allRoutes, {
-        isAuthenticated,
-        hasRole,
-        hasPermission,
-        hasAnyRole,
-        hasAnyPermission,
-        hasAllRoles,
-        hasAllPermissions,
-        user,
-      })
+      isAuthenticated,
+      hasRole,
+      hasPermission,
+      hasAnyRole,
+      hasAnyPermission,
+      hasAllRoles,
+      hasAllPermissions,
+      user,
+    })
     : allRoutes;
 
   const currentRoute = routeUtils.findMatchingRoute(currentPath, routesToSearch);
@@ -79,7 +79,7 @@ export const Routes = ({
       console.error(
         `Component "${currentRoute.component}" not found in pageComponents`
       );
-      return <DefaultNotFound />;
+      return NotFoundComponent ? <NotFoundComponent /> : <DefaultNotFound />;
     }
 
     return (
