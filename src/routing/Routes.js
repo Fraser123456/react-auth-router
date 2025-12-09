@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useRouter, useNavigate } from "./Router";
 import { RouteGuard } from "./RouteGuard";
+import { RouteProvider } from "./RouteContext";
 import { routeUtils } from "../utils";
 import { useAuth, usePermissions } from "../auth";
 
@@ -14,7 +15,7 @@ export const Routes = ({
   authenticatedDefaultRoute, // Default route for authenticated users (overrides defaultRoute)
   unauthenticatedDefaultRoute, // Default route for unauthenticated users (overrides defaultRoute)
 }) => {
-  const { currentPath, updateParams } = useRouter();
+  const { currentPath, updateParams, query } = useRouter();
   const navigate = useNavigate();
   const { isAuthenticated, user, loading } = useAuth();
   const {
@@ -90,6 +91,52 @@ export const Routes = ({
 
   const currentRoute = routeUtils.findMatchingRoute(currentPath, routesToSearch);
 
+  // Handle index route redirects
+  // If we match a route exactly and it has an index child, redirect to the index
+  useEffect(() => {
+    if (!currentRoute || loading) return;
+
+    // Check if this route has children and we're on the exact parent path
+    if (currentRoute.children && currentRoute.children.length > 0) {
+      const isExactParentPath = currentPath === currentRoute.path;
+
+      if (isExactParentPath) {
+        // Find index child
+        const indexChild = currentRoute.children.find(child => child.index === true);
+
+        if (indexChild) {
+          // Redirect to index child
+          navigate(indexChild.path, { replace: true });
+        }
+      }
+    }
+  }, [currentRoute, currentPath, loading, navigate]);
+
+  // Determine if we should render as a layout route
+  // A layout route renders the parent component with an Outlet for children
+  const shouldRenderAsLayout = useMemo(() => {
+    if (!currentRoute) return false;
+
+    // Must be marked as a layout route
+    if (!currentRoute.layout) return false;
+
+    // Must have children
+    if (!currentRoute.children || currentRoute.children.length === 0) return false;
+
+    // Current path must not be an exact match to parent path (unless there's no index route)
+    const isExactParentPath = currentPath === currentRoute.path;
+    const hasIndexChild = currentRoute.children.some(child => child.index === true);
+
+    // If we're on parent path and there's an index child, don't render as layout
+    // (let the redirect happen)
+    if (isExactParentPath && hasIndexChild) return false;
+
+    // Check if any child matches the current path
+    const hasMatchingChild = routeUtils.findMatchingRoute(currentPath, currentRoute.children);
+
+    return !!hasMatchingChild;
+  }, [currentRoute, currentPath]);
+
   // Extract params from the current URL based on the matched route
   const params = useMemo(() => {
     if (!currentRoute) return {};
@@ -117,6 +164,33 @@ export const Routes = ({
     return NotFoundComponent ? <NotFoundComponent /> : <DefaultNotFound />;
   }
 
+  // Render as layout route (parent component with Outlet for children)
+  if (shouldRenderAsLayout) {
+    const LayoutComponent = typeof currentRoute.component === "string"
+      ? pageComponents[currentRoute.component]
+      : currentRoute.component;
+
+    if (!LayoutComponent) {
+      console.error(`[Routes] Layout component not found for route: ${currentRoute.path}`);
+      return NotFoundComponent ? <NotFoundComponent /> : <DefaultNotFound />;
+    }
+
+    return (
+      <RouteGuard route={currentRoute}>
+        <RouteProvider
+          route={currentRoute}
+          params={params}
+          query={query}
+          childRoutes={currentRoute.children}
+          currentPath={currentPath}
+        >
+          <LayoutComponent params={params} route={currentRoute} query={query} />
+        </RouteProvider>
+      </RouteGuard>
+    );
+  }
+
+  // Standard rendering (non-layout routes) - current behavior
   if (typeof currentRoute.component === "string") {
     const PageComponent = pageComponents[currentRoute.component];
     if (!PageComponent) {
@@ -125,7 +199,7 @@ export const Routes = ({
 
     return (
       <RouteGuard route={currentRoute}>
-        <PageComponent params={params} route={currentRoute} />
+        <PageComponent params={params} route={currentRoute} query={query} />
       </RouteGuard>
     );
   }
@@ -133,7 +207,7 @@ export const Routes = ({
   const PageComponent = currentRoute.component;
   return (
     <RouteGuard route={currentRoute}>
-      <PageComponent params={params} route={currentRoute} />
+      <PageComponent params={params} route={currentRoute} query={query} />
     </RouteGuard>
   );
 };

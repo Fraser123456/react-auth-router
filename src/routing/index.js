@@ -4,6 +4,8 @@ export { Router, useRouter, useNavigate, useGoBack, useGoForward, useHistory } f
 export { RouteGuard } from "./RouteGuard";
 export { Routes } from "./Routes";
 export { Link } from "./Link";
+export { Outlet, OutletWithFallback } from "./Outlet";
+export { RouteProvider, useRouteContext, useHasChildRoutes } from "./RouteContext";
 
 // Individual hooks for better performance
 export const useParams = () => {
