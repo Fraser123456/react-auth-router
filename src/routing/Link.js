@@ -9,6 +9,7 @@ import { useNavigate } from "./Router";
  * @param {string} props.to - The path to navigate to
  * @param {boolean} props.replace - Replace current history entry instead of pushing
  * @param {Object} props.query - Query parameters to add to the URL
+ * @param {string} props.hash - Hash fragment to add to the URL
  * @param {Object} props.state - State to pass with navigation
  * @param {string} props.className - CSS class name
  * @param {Object} props.style - Inline styles
@@ -19,6 +20,7 @@ export const Link = ({
   to,
   replace = false,
   query = {},
+  hash = "",
   state = null,
   className = "",
   style = {},
@@ -43,7 +45,7 @@ export const Link = ({
     }
 
     // Perform navigation
-    navigate(to, { replace, query, state });
+    navigate(to, { replace, query, hash, state });
   };
 
   return (

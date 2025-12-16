@@ -357,6 +357,7 @@ declare module "react-auth-router" {
   export interface NavigateOptions {
     replace?: boolean;
     query?: Record<string, string>;
+    hash?: string;
     state?: any;
   }
 
@@ -364,6 +365,8 @@ declare module "react-auth-router" {
     currentPath: string;
     params: Record<string, string>;
     query: Record<string, string>;
+    hash: string;
+    hashParams: Record<string, string>;
     navigate: (path: string, options?: NavigateOptions) => void;
     goBack: () => void;
     goForward: () => void;
@@ -386,6 +389,8 @@ declare module "react-auth-router" {
   export function useHistory(): HistoryState;
   export function useParams(): Record<string, string>;
   export function useQuery(): Record<string, string>;
+  export function useHash(): string;
+  export function useHashParams(): Record<string, string>;
 
   // ============================================================================
   // Nested Route Types (v2.5.0+)
@@ -431,6 +436,7 @@ declare module "react-auth-router" {
     to: string;
     replace?: boolean;
     query?: Record<string, string>;
+    hash?: string;
     state?: any;
     className?: string;
     style?: React.CSSProperties;

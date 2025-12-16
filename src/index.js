@@ -26,6 +26,8 @@ export {
   useHistory,
   useParams,
   useQuery,
+  useHash,
+  useHashParams,
   useRouteContext,
   useHasChildRoutes,
 } from "./routing";

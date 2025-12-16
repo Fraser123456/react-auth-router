@@ -1,6 +1,6 @@
 {
   "name": "react-auth-router",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "type": "module",
   "description": "A comprehensive React library for authentication and routing with permissions, error handling, and performance optimization using subscriber patterns",
   "main": "dist/index.js",

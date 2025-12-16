@@ -17,3 +17,13 @@ export const useQuery = () => {
   const { query } = useRouterHook();
   return query;
 };
+
+export const useHash = () => {
+  const { hash } = useRouterHook();
+  return hash;
+};
+
+export const useHashParams = () => {
+  const { hashParams } = useRouterHook();
+  return hashParams;
+};

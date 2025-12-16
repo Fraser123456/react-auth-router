@@ -14,6 +14,8 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
   );
   const [params, setParams] = useState({});
   const [query, setQuery] = useState({});
+  const [hash, setHash] = useState("");
+  const [hashParams, setHashParams] = useState({});
 
   useEffect(() => {
     if (typeof window === "undefined" || !enableHistory) return;
@@ -24,21 +26,55 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
       updateRouteState(path);
     };
 
+    const handleHashChange = () => {
+      updateRouteState(currentPath);
+    };
+
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("hashchange", handleHashChange);
     updateRouteState(currentPath);
 
-    return () => window.removeEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("hashchange", handleHashChange);
+    };
   }, [currentPath, enableHistory]);
 
   const updateRouteState = useCallback((path) => {
     if (typeof window === "undefined") return;
 
+    // Parse query parameters (after ?)
     const searchParams = new URLSearchParams(window.location.search);
     const queryParams = {};
     for (let [key, value] of searchParams) {
       queryParams[key] = value;
     }
     setQuery(queryParams);
+
+    // Parse hash fragment (after #)
+    const hashString = window.location.hash;
+    if (hashString) {
+      // Remove the leading # symbol
+      const hashWithoutSymbol = hashString.substring(1);
+      setHash(hashWithoutSymbol);
+
+      // Parse hash parameters (e.g., #access_token=xyz&token_type=bearer)
+      // Check if hash contains parameters (has = or &)
+      if (hashWithoutSymbol.includes("=") || hashWithoutSymbol.includes("&")) {
+        const hashSearchParams = new URLSearchParams(hashWithoutSymbol);
+        const hashParamsObj = {};
+        for (let [key, value] of hashSearchParams) {
+          hashParamsObj[key] = value;
+        }
+        setHashParams(hashParamsObj);
+      } else {
+        // Hash is just a fragment identifier (e.g., #section1)
+        setHashParams({});
+      }
+    } else {
+      setHash("");
+      setHashParams({});
+    }
   }, []);
 
   const navigate = useCallback(
@@ -46,15 +82,26 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
       const {
         replace = false,
         query: queryParams = {},
+        hash: hashFragment = "",
         state = null,
       } = options;
 
       const fullPath = basePath ? `${basePath}${path}` : path;
 
+      // Build query string
       const searchParams = new URLSearchParams(queryParams);
-      const finalPath = searchParams.toString()
+      let finalPath = searchParams.toString()
         ? `${fullPath}?${searchParams}`
         : fullPath;
+
+      // Add hash fragment if provided
+      if (hashFragment) {
+        // Ensure hash doesn't start with # (we'll add it)
+        const cleanHash = hashFragment.startsWith("#")
+          ? hashFragment.substring(1)
+          : hashFragment;
+        finalPath = `${finalPath}#${cleanHash}`;
+      }
 
       if (typeof window !== "undefined" && enableHistory) {
         if (replace) {
@@ -98,6 +145,8 @@ export const Router = ({ children, basePath = "", enableHistory = true }) => {
         currentPath,
         params,
         query,
+        hash,
+        hashParams,
         navigate,
         goBack,
         goForward,
