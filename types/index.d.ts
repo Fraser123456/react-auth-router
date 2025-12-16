@@ -324,6 +324,8 @@ declare module "react-auth-router" {
     meta?: { title?: string; description?: string };
     breadcrumb?: string[];
     customGuard?: (context: GuardContext) => boolean;
+    layout?: boolean; // v2.5.0+ - Enable layout mode (render parent with Outlet for children)
+    index?: boolean; // v2.5.0+ - Mark as index route (default child when hitting parent path)
   }
 
   export interface RouteConfig {
@@ -355,6 +357,7 @@ declare module "react-auth-router" {
   export interface NavigateOptions {
     replace?: boolean;
     query?: Record<string, string>;
+    hash?: string;
     state?: any;
   }
 
@@ -362,6 +365,8 @@ declare module "react-auth-router" {
     currentPath: string;
     params: Record<string, string>;
     query: Record<string, string>;
+    hash: string;
+    hashParams: Record<string, string>;
     navigate: (path: string, options?: NavigateOptions) => void;
     goBack: () => void;
     goForward: () => void;
@@ -384,6 +389,44 @@ declare module "react-auth-router" {
   export function useHistory(): HistoryState;
   export function useParams(): Record<string, string>;
   export function useQuery(): Record<string, string>;
+  export function useHash(): string;
+  export function useHashParams(): Record<string, string>;
+
+  // ============================================================================
+  // Nested Route Types (v2.5.0+)
+  // ============================================================================
+
+  export interface RouteContextValue {
+    route: Route;
+    params: Record<string, string>;
+    query: Record<string, string>;
+    childRoutes: Route[];
+    currentPath: string;
+  }
+
+  export interface RouteProviderProps {
+    route: Route;
+    params: Record<string, string>;
+    query: Record<string, string>;
+    childRoutes: Route[];
+    currentPath: string;
+    children: ReactNode;
+  }
+
+  export interface OutletProps {
+    fallback?: ReactNode | ComponentType;
+  }
+
+  export interface OutletWithFallbackProps {
+    message?: string;
+    fallback?: ComponentType;
+  }
+
+  export function RouteProvider(props: RouteProviderProps): JSX.Element;
+  export function Outlet(props?: OutletProps): JSX.Element | null;
+  export function OutletWithFallback(props?: OutletWithFallbackProps): JSX.Element;
+  export function useRouteContext(): RouteContextValue;
+  export function useHasChildRoutes(): boolean;
 
   // ============================================================================
   // Component Types
@@ -393,6 +436,7 @@ declare module "react-auth-router" {
     to: string;
     replace?: boolean;
     query?: Record<string, string>;
+    hash?: string;
     state?: any;
     className?: string;
     style?: React.CSSProperties;

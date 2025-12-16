@@ -16,6 +16,9 @@ export {
   Routes,
   RouteGuard,
   Link,
+  Outlet,
+  OutletWithFallback,
+  RouteProvider,
   useRouter,
   useNavigate,
   useGoBack,
@@ -23,6 +26,10 @@ export {
   useHistory,
   useParams,
   useQuery,
+  useHash,
+  useHashParams,
+  useRouteContext,
+  useHasChildRoutes,
 } from "./routing";
 
 // Component exports
