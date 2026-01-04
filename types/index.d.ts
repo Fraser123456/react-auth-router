@@ -123,7 +123,7 @@ declare module "react-auth-router" {
     customLogin?: (
       credentials: LoginCredentials
     ) => Promise<{
-      user: User;
+      user?: User;
       token?: string;
       accessToken?: string;
       refreshToken?: string;
@@ -132,6 +132,7 @@ declare module "react-auth-router" {
     customRefresh?: (
       currentToken: string
     ) => Promise<string | {
+      user?: User,
       accessToken?: string;
       token?: string;
       refreshToken?: string;
