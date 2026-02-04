@@ -1,5 +1,5 @@
 declare module "react-auth-router" {
-  import { ReactNode, ComponentType } from "react";
+  import { ReactNode, ComponentType, JSX } from "react";
 
   // ============================================================================
   // User & Authentication Types
@@ -130,7 +130,7 @@ declare module "react-auth-router" {
     }>;
     customLogout?: () => Promise<void>;
     customRefresh?: (
-      currentToken: string
+      currentToken?: string
     ) => Promise<string | {
       user?: User,
       accessToken?: string;
@@ -191,7 +191,7 @@ declare module "react-auth-router" {
 
   export interface RefreshTokenOptions {
     apiEndpoint?: string;
-    customRefresh?: (currentToken: string) => Promise<string | {
+    customRefresh?: (currentToken?: string) => Promise<string | {
       accessToken?: string;
       token?: string;
       refreshToken?: string;

@@ -114,6 +114,8 @@ export default App;
 
 ## Documentation
 
+> **📦 Documentation Included**: All documentation is included in the npm package! After installation, you can find it in `node_modules/react-auth-router/docs/` for offline access. Perfect for AI development tools like Claude Code.
+
 ### Core Guides
 
 - **[Security Guide](./docs/SECURITY.md)** - Enterprise-grade security features, token storage strategies, CSRF protection
@@ -274,7 +276,13 @@ const { goBack, goForward, go } = useHistory();
 
 ## What's New
 
-### v2.6.0 - Hash Fragment Support 🆕
+### v2.6.2 - Documentation in Package 🆕
+- Documentation now included in npm package for offline access
+- AI development tools (Claude Code, Copilot, etc.) can read docs locally
+- Added CHANGELOG.md for version tracking
+- Enhanced documentation index in docs/README.md
+
+### v2.6.0 - Hash Fragment Support
 - Full support for URL hash fragments (`#section`)
 - Parse hash parameters for OAuth callbacks (`#access_token=xyz&token_type=bearer`)
 - New `useHash()` and `useHashParams()` hooks
