@@ -195,7 +195,7 @@ declare module "react-auth-router" {
       accessToken?: string;
       token?: string;
       refreshToken?: string;
-    }>;
+    } | null>;
   }
 
   // ============================================================================
