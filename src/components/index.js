@@ -53,7 +53,6 @@ export const Routes = ({
 
     // Perform redirect if needed (use replace to avoid adding to history)
     if (redirectTo && redirectTo !== currentPath) {
-      console.log('[Routes] Redirecting from', currentPath, 'to', redirectTo);
       navigate(redirectTo, { replace: true });
     }
   }, [

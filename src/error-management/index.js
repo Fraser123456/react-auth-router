@@ -66,8 +66,6 @@ export const ErrorProvider = ({ children, toastConfig = {} }) => {
       details: options.details || null,
     };
 
-    console.log("Success:", successObj);
-
     toast.success(message, { ...defaultToastConfig, ...options });
 
     return successObj.id;
