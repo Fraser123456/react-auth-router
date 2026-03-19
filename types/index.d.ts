@@ -35,7 +35,7 @@ declare module "react-auth-router" {
 
   export interface TokenStorageConfig {
     storage: StorageType;
-    key: string;
+    key: string | null;
   }
 
   export interface FullStorageConfig {
@@ -105,6 +105,21 @@ declare module "react-auth-router" {
   export function createCsrfHandler(config?: CsrfConfig): CsrfHandler;
 
   // ============================================================================
+  // Token Claim Configuration (v2.8.0+)
+  // ============================================================================
+
+  export type TokenClaimResolver = string | ((claims: Record<string, any>) => string[]);
+
+  export interface TokenClaimsConfig {
+    /** Path to roles in the JWT payload. Dot-notation string (e.g. "app_metadata.roles")
+     *  or a function that receives the decoded claims and returns a string array. */
+    roles?: TokenClaimResolver;
+    /** Path to permissions in the JWT payload. Dot-notation string
+     *  or a function that receives the decoded claims and returns a string array. */
+    permissions?: TokenClaimResolver;
+  }
+
+  // ============================================================================
   // Enhanced Auth Configuration (v2.4.0+)
   // ============================================================================
 
@@ -124,6 +139,9 @@ declare module "react-auth-router" {
 
     // CSRF configuration
     csrf?: CsrfConfig;
+
+    // Token claim paths (v2.8.0+)
+    tokenClaims?: TokenClaimsConfig;
 
     // Custom functions
     customLogin?: (credentials: LoginCredentials) => Promise<{
@@ -248,6 +266,9 @@ declare module "react-auth-router" {
     generateMockToken(user: User, type?: "access" | "refresh"): string;
     validateToken(token: string): Promise<boolean>;
     setupTokenRefresh(token: string | null): void;
+    decodeToken(token: string): Record<string, any> | null;
+    getTokenRoles(): string[];
+    getTokenPermissions(): string[];
 
     // Storage
     persistToStorage(

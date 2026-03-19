@@ -17,7 +17,7 @@ As of v2.7.0, all permission and role checks (`hasRole`, `hasPermission`, etc.) 
 
 This prevents users from opening DevTools and modifying their roles/permissions in sessionStorage or localStorage to bypass UI-level access control.
 
-**Your JWT payload must include `roles` and/or `permissions` claims:**
+**Default behaviour** — the library looks for `roles` and `permissions` (or `perms`) at the top level of the token payload:
 
 ```json
 {
@@ -28,7 +28,40 @@ This prevents users from opening DevTools and modifying their roles/permissions 
 }
 ```
 
-If your token does not include these claims, the library falls back to the stored user object (backward compatible). See [Security docs](./SECURITY.md#jwt-based-permission-validation-v270) for full details.
+If your token does not include these claims, the library falls back to the stored user object (backward compatible).
+
+### Custom Claim Paths (v2.8.0+)
+
+Third-party providers like Supabase often nest claims differently. Use `tokenClaims` to tell the library where to find roles and permissions in your token.
+
+**Dot-notation path** — for nested claims:
+
+```js
+initializeAuth({
+  tokenClaims: {
+    roles:       'app_metadata.roles',
+    permissions: 'app_metadata.permissions',
+  },
+});
+```
+
+**Function** — for any structure, including computed or combined claims:
+
+```js
+initializeAuth({
+  tokenClaims: {
+    roles:       (claims) => claims.app_metadata?.roles ?? [],
+    permissions: (claims) => [
+      ...(claims.app_metadata?.permissions ?? []),
+      ...(claims.user_metadata?.extra_permissions ?? []),
+    ],
+  },
+});
+```
+
+Both `roles` and `permissions` can mix path strings and functions independently. If a resolver is not provided for one of them, the library falls back to the default top-level claim lookup.
+
+See [Security docs](./SECURITY.md#jwt-based-permission-validation-v270) for full details.
 
 ## Role-Based Access Control (RBAC)
 

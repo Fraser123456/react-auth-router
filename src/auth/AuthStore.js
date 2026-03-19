@@ -73,6 +73,12 @@ export class AuthStore {
         user: ["read_users"],
       },
 
+      // Token claim paths — string (dot-notation) or function, or null for defaults
+      tokenClaims: {
+        roles: config.tokenClaims?.roles ?? null,
+        permissions: config.tokenClaims?.permissions ?? null,
+      },
+
       // Custom functions
       customLogin: config.customLogin,
       customLogout: config.customLogout,
@@ -536,15 +542,29 @@ export class AuthStore {
     }
   }
 
+  resolveClaim(claims, resolver) {
+    if (typeof resolver === 'function') return resolver(claims) || [];
+    if (typeof resolver === 'string') {
+      const value = resolver.split('.').reduce((obj, key) => obj?.[key], claims);
+      return value || [];
+    }
+    return null; // no resolver configured — fall back to defaults
+  }
+
   getTokenRoles() {
     const claims = this.decodeToken(this.getToken());
-    return claims?.roles || [];
+    if (!claims) return [];
+    const resolved = this.resolveClaim(claims, this.config.tokenClaims.roles);
+    if (resolved !== null) return resolved;
+    return claims.roles || [];
   }
 
   getTokenPermissions() {
     const claims = this.decodeToken(this.getToken());
-    // Support common JWT permission claim names
-    return claims?.permissions || claims?.perms || [];
+    if (!claims) return [];
+    const resolved = this.resolveClaim(claims, this.config.tokenClaims.permissions);
+    if (resolved !== null) return resolved;
+    return claims.permissions || claims.perms || [];
   }
 
   async validateToken(token) {
