@@ -18,9 +18,13 @@ declare module "react-auth-router" {
   // Storage Strategy Types (v2.4.0+)
   // ============================================================================
 
-  export type StorageType = 'memory' | 'sessionStorage' | 'localStorage' | 'httpOnly';
+  export type StorageType =
+    | "memory"
+    | "sessionStorage"
+    | "localStorage"
+    | "httpOnly";
 
-  export type SecurityMode = 'legacy' | 'recommended' | 'custom';
+  export type SecurityMode = "legacy" | "recommended" | "custom";
 
   export interface StorageStrategy {
     getItem(key: string): string | null;
@@ -35,9 +39,9 @@ declare module "react-auth-router" {
   }
 
   export interface FullStorageConfig {
-    accessToken: TokenStorageConfig;
-    refreshToken: TokenStorageConfig;
-    user: TokenStorageConfig;
+    accessToken?: TokenStorageConfig;
+    refreshToken?: TokenStorageConfig;
+    user?: TokenStorageConfig;
   }
 
   export class MemoryStorage implements StorageStrategy {
@@ -91,7 +95,9 @@ declare module "react-auth-router" {
     removeToken(): void;
     extractTokenFromCookie(): string | null;
     extractTokenFromResponse(response: Response): string | null;
-    getHeaders(existingHeaders?: Record<string, string>): Record<string, string>;
+    getHeaders(
+      existingHeaders?: Record<string, string>,
+    ): Record<string, string>;
     processResponse(response: Response): void;
     validateToken(token: string): boolean;
   }
@@ -120,23 +126,22 @@ declare module "react-auth-router" {
     csrf?: CsrfConfig;
 
     // Custom functions
-    customLogin?: (
-      credentials: LoginCredentials
-    ) => Promise<{
+    customLogin?: (credentials: LoginCredentials) => Promise<{
       user?: User;
       token?: string;
       accessToken?: string;
       refreshToken?: string;
     }>;
     customLogout?: () => Promise<void>;
-    customRefresh?: (
-      currentToken?: string
-    ) => Promise<string | {
-      user?: User,
-      accessToken?: string;
-      token?: string;
-      refreshToken?: string;
-    }>;
+    customRefresh?: (currentToken?: string) => Promise<
+      | string
+      | {
+          user?: User;
+          accessToken?: string;
+          token?: string;
+          refreshToken?: string;
+        }
+    >;
   }
 
   // ============================================================================
@@ -149,9 +154,7 @@ declare module "react-auth-router" {
 
   export interface LoginOptions {
     apiEndpoint?: string;
-    customLogin?: (
-      credentials: LoginCredentials
-    ) => Promise<{
+    customLogin?: (credentials: LoginCredentials) => Promise<{
       user: User;
       token?: string;
       accessToken?: string;
@@ -191,11 +194,15 @@ declare module "react-auth-router" {
 
   export interface RefreshTokenOptions {
     apiEndpoint?: string;
-    customRefresh?: (currentToken?: string) => Promise<string | {
-      accessToken?: string;
-      token?: string;
-      refreshToken?: string;
-    } | null>;
+    customRefresh?: (currentToken?: string) => Promise<
+      | string
+      | {
+          accessToken?: string;
+          token?: string;
+          refreshToken?: string;
+        }
+      | null
+    >;
   }
 
   // ============================================================================
@@ -216,14 +223,14 @@ declare module "react-auth-router" {
     // Authentication methods
     login(
       credentials: LoginCredentials,
-      options?: LoginOptions
+      options?: LoginOptions,
     ): Promise<LoginResult>;
 
     logout(options?: LogoutOptions): Promise<LogoutResult>;
 
     updateProfile(
       updates: Partial<User>,
-      options?: UpdateProfileOptions
+      options?: UpdateProfileOptions,
     ): Promise<UpdateProfileResult>;
 
     refreshToken(options?: RefreshTokenOptions): Promise<boolean>;
@@ -238,12 +245,16 @@ declare module "react-auth-router" {
     expandPermissions(roles: string[]): string[];
 
     // Token management
-    generateMockToken(user: User, type?: 'access' | 'refresh'): string;
+    generateMockToken(user: User, type?: "access" | "refresh"): string;
     validateToken(token: string): Promise<boolean>;
     setupTokenRefresh(token: string | null): void;
 
     // Storage
-    persistToStorage(user: User, accessToken: string, refreshToken?: string): void;
+    persistToStorage(
+      user: User,
+      accessToken: string,
+      refreshToken?: string,
+    ): void;
     clearStorage(): void;
 
     // Getters
@@ -268,12 +279,12 @@ declare module "react-auth-router" {
     isAuthenticated: boolean;
     login: (
       credentials: LoginCredentials,
-      options?: LoginOptions
+      options?: LoginOptions,
     ) => Promise<LoginResult>;
     logout: (options?: LogoutOptions) => Promise<LogoutResult>;
     updateProfile: (
       updates: Partial<User>,
-      options?: UpdateProfileOptions
+      options?: UpdateProfileOptions,
     ) => Promise<UpdateProfileResult>;
     refreshToken: (options?: RefreshTokenOptions) => Promise<boolean>;
     hasRole: (role: string) => boolean;
@@ -384,7 +395,10 @@ declare module "react-auth-router" {
 
   export function Router(props: RouterProps): JSX.Element;
   export function useRouter(): RouterState;
-  export function useNavigate(): (path: string, options?: NavigateOptions) => void;
+  export function useNavigate(): (
+    path: string,
+    options?: NavigateOptions,
+  ) => void;
   export function useGoBack(): () => void;
   export function useGoForward(): () => void;
   export function useHistory(): HistoryState;
@@ -425,7 +439,9 @@ declare module "react-auth-router" {
 
   export function RouteProvider(props: RouteProviderProps): JSX.Element;
   export function Outlet(props?: OutletProps): JSX.Element | null;
-  export function OutletWithFallback(props?: OutletWithFallbackProps): JSX.Element;
+  export function OutletWithFallback(
+    props?: OutletWithFallbackProps,
+  ): JSX.Element;
   export function useRouteContext(): RouteContextValue;
   export function useHasChildRoutes(): boolean;
 
@@ -451,8 +467,15 @@ declare module "react-auth-router" {
     route: Route;
     children: ReactNode;
     fallback?: ReactNode;
-    unauthorizedComponent?: ComponentType<{ route: Route; onRetry?: () => void }>;
-    forbiddenComponent?: ComponentType<{ route: Route; message?: string; onRetry?: () => void }>;
+    unauthorizedComponent?: ComponentType<{
+      route: Route;
+      onRetry?: () => void;
+    }>;
+    forbiddenComponent?: ComponentType<{
+      route: Route;
+      message?: string;
+      onRetry?: () => void;
+    }>;
   }
 
   export function RouteGuard(props: RouteGuardProps): JSX.Element;
@@ -476,7 +499,10 @@ declare module "react-auth-router" {
     mobileBreakpoint?: number;
     showIcons?: boolean;
     brandComponent?: ReactNode;
-    customLogoutComponent?: (props: { user: User | null; onLogout: () => void }) => ReactNode;
+    customLogoutComponent?: (props: {
+      user: User | null;
+      onLogout: () => void;
+    }) => ReactNode;
     style?: React.CSSProperties;
   }
 
@@ -511,7 +537,7 @@ declare module "react-auth-router" {
   }
 
   export function ProtectedComponent(
-    props: ProtectedComponentProps
+    props: ProtectedComponentProps,
   ): JSX.Element;
 
   // ============================================================================
@@ -533,13 +559,19 @@ declare module "react-auth-router" {
   };
 
   export interface ToastConfig {
-    position?: 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
+    position?:
+      | "top-left"
+      | "top-right"
+      | "top-center"
+      | "bottom-left"
+      | "bottom-right"
+      | "bottom-center";
     autoClose?: number | false;
     hideProgressBar?: boolean;
     closeOnClick?: boolean;
     pauseOnHover?: boolean;
     draggable?: boolean;
-    theme?: 'light' | 'dark' | 'colored';
+    theme?: "light" | "dark" | "colored";
     className?: string;
   }
 
@@ -607,7 +639,10 @@ declare module "react-auth-router" {
     extractParams: (path: string, routePath: string) => Record<string, string>;
     generateBreadcrumbs: (route: Route, routes: Route[]) => BreadcrumbItem[];
     canAccessRoute: (route: Route, context: RouteAccessContext) => boolean;
-    filterAccessibleRoutes: (routes: Route[], context: RouteAccessContext) => Route[];
+    filterAccessibleRoutes: (
+      routes: Route[],
+      context: RouteAccessContext,
+    ) => Route[];
   };
 
   export interface DefaultConfig {

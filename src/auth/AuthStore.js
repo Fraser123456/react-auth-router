@@ -125,11 +125,15 @@ export class AuthStore {
       this.loading = true;
       this.notify("LOADING_START");
 
-      // Get stored user data
-      const storedAuth = this.userStorage.getItem(this.config.storageConfig.user.key);
+      // Get stored user data (skip if key is null)
+      const storedAuth = this.config.storageConfig.user.key
+        ? this.userStorage.getItem(this.config.storageConfig.user.key)
+        : null;
 
-      // Get stored access token
-      const storedToken = this.accessTokenStorage.getItem(this.config.storageConfig.accessToken.key);
+      // Get stored access token (skip if key is null)
+      const storedToken = this.config.storageConfig.accessToken.key
+        ? this.accessTokenStorage.getItem(this.config.storageConfig.accessToken.key)
+        : null;
 
       // For httpOnly storage, we can't read the token but may have user data
       const isHttpOnlyMode = this.config.storageConfig.refreshToken.storage === 'httpOnly';
@@ -168,7 +172,7 @@ export class AuthStore {
         const accessTokenKey = this.config.storageConfig.accessToken.key;
         const userKey = this.config.storageConfig.user.key;
 
-        if (e.key === accessTokenKey || e.key === userKey) {
+        if ((accessTokenKey && e.key === accessTokenKey) || (userKey && e.key === userKey)) {
           if (e.newValue === null) {
             this.user = null;
             this.notify("LOGOUT_SUCCESS");
@@ -346,7 +350,9 @@ export class AuthStore {
         }
       }
 
-      this.userStorage.setItem(this.config.storageConfig.user.key, JSON.stringify(this.user));
+      if (this.config.storageConfig.user.key) {
+        this.userStorage.setItem(this.config.storageConfig.user.key, JSON.stringify(this.user));
+      }
       this.notify("PROFILE_UPDATE_SUCCESS", this.user);
       return { success: true, user: this.user };
     } catch (error) {
@@ -359,7 +365,9 @@ export class AuthStore {
   async refreshToken(options = {}) {
     try {
       const { apiEndpoint, customRefresh } = options;
-      const currentAccessToken = this.accessTokenStorage.getItem(this.config.storageConfig.accessToken.key);
+      const currentAccessToken = this.config.storageConfig.accessToken.key
+        ? this.accessTokenStorage.getItem(this.config.storageConfig.accessToken.key)
+        : null;
       const isHttpOnlyMode = this.config.storageConfig.refreshToken.storage === 'httpOnly';
 
       // For httpOnly mode, we don't need the current token in the request
@@ -416,11 +424,13 @@ export class AuthStore {
         }
       }
 
-      // Store new access token
-      this.accessTokenStorage.setItem(this.config.storageConfig.accessToken.key, newAccessToken);
+      // Store new access token (skip if key is null)
+      if (this.config.storageConfig.accessToken.key) {
+        this.accessTokenStorage.setItem(this.config.storageConfig.accessToken.key, newAccessToken);
+      }
 
-      // Store new refresh token if rotation is enabled and we got one
-      if (this.config.tokenRotation && newRefreshToken && this.config.storageConfig.refreshToken.storage !== 'httpOnly') {
+      // Store new refresh token if rotation is enabled and we got one (skip if key is null)
+      if (this.config.tokenRotation && newRefreshToken && this.config.storageConfig.refreshToken.storage !== 'httpOnly' && this.config.storageConfig.refreshToken.key) {
         this.refreshTokenStorage.setItem(this.config.storageConfig.refreshToken.key, newRefreshToken);
       }
 
@@ -574,29 +584,35 @@ export class AuthStore {
   }
 
   persistToStorage(user, accessToken, refreshToken) {
-    // Store user data
-    this.userStorage.setItem(this.config.storageConfig.user.key, JSON.stringify(user));
+    // Store user data (skip if key is null)
+    if (this.config.storageConfig.user.key) {
+      this.userStorage.setItem(this.config.storageConfig.user.key, JSON.stringify(user));
+    }
 
-    // Store access token
-    if (accessToken) {
+    // Store access token (skip if key is null)
+    if (accessToken && this.config.storageConfig.accessToken.key) {
       this.accessTokenStorage.setItem(this.config.storageConfig.accessToken.key, accessToken);
     }
 
-    // Store refresh token (only if not using httpOnly cookies)
-    if (refreshToken && this.config.storageConfig.refreshToken.storage !== 'httpOnly') {
+    // Store refresh token (only if not using httpOnly cookies, skip if key is null)
+    if (refreshToken && this.config.storageConfig.refreshToken.storage !== 'httpOnly' && this.config.storageConfig.refreshToken.key) {
       this.refreshTokenStorage.setItem(this.config.storageConfig.refreshToken.key, refreshToken);
     }
   }
 
   clearStorage() {
-    // Clear user data
-    this.userStorage.removeItem(this.config.storageConfig.user.key);
+    // Clear user data (skip if key is null)
+    if (this.config.storageConfig.user.key) {
+      this.userStorage.removeItem(this.config.storageConfig.user.key);
+    }
 
-    // Clear access token
-    this.accessTokenStorage.removeItem(this.config.storageConfig.accessToken.key);
+    // Clear access token (skip if key is null)
+    if (this.config.storageConfig.accessToken.key) {
+      this.accessTokenStorage.removeItem(this.config.storageConfig.accessToken.key);
+    }
 
-    // Clear refresh token (only if not using httpOnly cookies)
-    if (this.config.storageConfig.refreshToken.storage !== 'httpOnly') {
+    // Clear refresh token (only if not using httpOnly cookies, skip if key is null)
+    if (this.config.storageConfig.refreshToken.storage !== 'httpOnly' && this.config.storageConfig.refreshToken.key) {
       this.refreshTokenStorage.removeItem(this.config.storageConfig.refreshToken.key);
     }
 
@@ -612,10 +628,12 @@ export class AuthStore {
   }
 
   getToken() {
+    if (!this.config.storageConfig.accessToken.key) return null;
     return this.accessTokenStorage.getItem(this.config.storageConfig.accessToken.key);
   }
 
   getRefreshToken() {
+    if (!this.config.storageConfig.refreshToken.key) return null;
     if (this.config.storageConfig.refreshToken.storage === 'httpOnly') {
       console.info('[AuthStore] Refresh token is stored in httpOnly cookie and cannot be accessed from JavaScript');
       return null;

@@ -85,6 +85,32 @@ initializeAuth({
 });
 ```
 
+### Nullable Storage Keys (v2.7.1+)
+
+Any `key` in a `storageConfig` entry can be set to `null` to opt out of persisting that piece of data entirely. The value is then kept only in memory for the lifetime of the `AuthStore` instance.
+
+```jsx
+initializeAuth({
+  securityMode: 'custom',
+  storageConfig: {
+    accessToken: {
+      storage: 'memory',
+      key: 'access_token',
+    },
+    refreshToken: {
+      storage: 'httpOnly',
+      key: 'refresh_token',
+    },
+    user: {
+      storage: 'sessionStorage',
+      key: null,  // user data stays in memory only — never written to sessionStorage
+    },
+  },
+});
+```
+
+This is especially useful when combined with JWT-based permission checks (v2.7.0+): since roles and permissions are now read from the access token, the stored user object is only needed for display information (name, email, etc.). Setting `user.key: null` means that information is never persisted to browser storage and cannot be tampered with via DevTools at all.
+
 ### 3. Legacy Mode (Backward Compatible)
 
 **Best for:** Existing applications, gradual migration
