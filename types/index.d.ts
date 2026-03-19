@@ -109,6 +109,7 @@ declare module "react-auth-router" {
   // ============================================================================
 
   export type TokenClaimResolver = string | ((claims: Record<string, any>) => string[]);
+  export type TokenUserResolver = string | ((claims: Record<string, any>) => Record<string, any>);
 
   export interface TokenClaimsConfig {
     /** Path to roles in the JWT payload. Dot-notation string (e.g. "app_metadata.roles")
@@ -117,6 +118,10 @@ declare module "react-auth-router" {
     /** Path to permissions in the JWT payload. Dot-notation string
      *  or a function that receives the decoded claims and returns a string array. */
     permissions?: TokenClaimResolver;
+    /** Path to the user object in the JWT payload. Dot-notation string (e.g. "user_metadata")
+     *  or a function that receives the decoded claims and returns the user object.
+     *  Used when user.key is null and the user is derived from the token on refresh. */
+    user?: TokenUserResolver;
   }
 
   // ============================================================================

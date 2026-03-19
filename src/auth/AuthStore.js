@@ -77,6 +77,7 @@ export class AuthStore {
       tokenClaims: {
         roles: config.tokenClaims?.roles ?? null,
         permissions: config.tokenClaims?.permissions ?? null,
+        user: config.tokenClaims?.user ?? null,
       },
 
       // Custom functions
@@ -156,8 +157,22 @@ export class AuthStore {
       // For httpOnly storage, we can't read the token but may have user data
       const isHttpOnlyMode = this.config.storageConfig.refreshToken.storage === 'httpOnly';
 
-      if (storedAuth && (storedToken || isHttpOnlyMode)) {
-        const authData = JSON.parse(storedAuth);
+      // When user.key is null, fall back to decoding user data from the token payload
+      const noUserStorage = !this.config.storageConfig.user.key;
+
+      if ((storedAuth || (noUserStorage && storedToken)) && (storedToken || isHttpOnlyMode)) {
+        // If no user storage configured, derive user data from the JWT payload
+        const authData = storedAuth
+          ? JSON.parse(storedAuth)
+          : (() => {
+              const payload = JSON.parse(atob(storedToken.split('.')[1]));
+              const resolver = this.config.tokenClaims.user;
+              if (resolver) {
+                const extracted = this.resolveClaim(payload, resolver);
+                return extracted || payload;
+              }
+              return payload;
+            })();
 
         // Validate token if we have it
         if (storedToken && await this.validateToken(storedToken)) {
