@@ -1,8 +1,7 @@
-# React Auth Router
+# React Auth Router v2.7.2
 
 > A comprehensive React library for authentication and routing with permissions, error handling, and performance optimization using subscriber patterns.
 
-[![npm version](https://badge.fury.io/js/react-auth-router.svg)](https://badge.fury.io/js/react-auth-router)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 
@@ -172,6 +171,7 @@ Without this import, toast notifications will not display properly.
 ### Dependencies
 
 The library includes:
+
 - **react-toastify** - Beautiful toast notifications (automatically installed)
 - **lucide-react** - Icon library (automatically installed)
 
@@ -277,12 +277,14 @@ const { goBack, goForward, go } = useHistory();
 ## What's New
 
 ### v2.6.2 - Documentation in Package 🆕
+
 - Documentation now included in npm package for offline access
 - AI development tools (Claude Code, Copilot, etc.) can read docs locally
 - Added CHANGELOG.md for version tracking
 - Enhanced documentation index in docs/README.md
 
 ### v2.6.0 - Hash Fragment Support
+
 - Full support for URL hash fragments (`#section`)
 - Parse hash parameters for OAuth callbacks (`#access_token=xyz&token_type=bearer`)
 - New `useHash()` and `useHashParams()` hooks
@@ -291,11 +293,13 @@ const { goBack, goForward, go } = useHistory();
 - Automatic `hashchange` event handling
 
 ### v2.5.0 - Layout Routes with Outlet
+
 - Added `Outlet` component for layout routes
 - Added `useHasChildRoutes()` hook
 - Support for parent layouts that wrap child routes
 
 ### v2.4.0 - Enhanced Security
+
 - Enterprise-grade security modes (Recommended/Custom/Legacy)
 - Multiple storage strategies (memory, sessionStorage, localStorage, httpOnly cookies)
 - Automatic token rotation
@@ -303,15 +307,18 @@ const { goBack, goForward, go } = useHistory();
 - Separate access/refresh token management
 
 ### v2.3.0 - Default Routes & Navigation
+
 - Default route functionality for "/" path
 - Navigation history hooks (`useGoBack`, `useGoForward`, `useHistory`)
 - Smart authentication-based redirects
 
 ### v2.2.2 - Guest-Only Routes
+
 - `requireGuest` property for login/register routes
 - Prevents authenticated users from accessing auth pages
 
 ### v2.2.1 - Security Enhancement
+
 - Secure by default: unauthorized routes show 404
 - Prevents route enumeration attacks
 

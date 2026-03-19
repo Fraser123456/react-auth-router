@@ -14,7 +14,19 @@ export class AuthStore {
     if (useSecureMode && !hasLegacyConfig) {
       storageConfig = getRecommendedStorageConfig();
     } else if (config.storageConfig) {
-      storageConfig = config.storageConfig;
+      // Merge with defaults for storage type (prevents crash), but omitted or null
+      // entries get key: null so no data is written for things you didn't configure.
+      const defaults = getLegacyStorageConfig();
+      const mergeEntry = (defaultEntry, userEntry) => ({
+        ...defaultEntry,
+        ...(userEntry || {}),
+        key: userEntry ? (userEntry.key !== undefined ? userEntry.key : defaultEntry.key) : null,
+      });
+      storageConfig = {
+        accessToken: mergeEntry(defaults.accessToken, config.storageConfig.accessToken),
+        refreshToken: mergeEntry(defaults.refreshToken, config.storageConfig.refreshToken),
+        user:         mergeEntry(defaults.user,         config.storageConfig.user),
+      };
     } else {
       // Legacy mode for backward compatibility
       storageConfig = getLegacyStorageConfig();
