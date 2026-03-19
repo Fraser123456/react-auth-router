@@ -468,6 +468,55 @@ initializeAuth({
    - Cookies marked `secure` won't work
    - Tokens can be intercepted
 
+## JWT-Based Permission Validation (v2.7.0+)
+
+Permission and role checks now read directly from the **decoded JWT access token** rather than from the user object in sessionStorage/localStorage.
+
+### Why This Matters
+
+Previously, `hasRole` and `hasPermission` read from the user object stored in browser storage. A user could open DevTools, edit the `roles` or `permissions` fields in sessionStorage, and bypass UI-level access control — gaining access to screens they shouldn't see. While your server-side APIs would still reject unauthorized requests, the UI was misleadingly accessible.
+
+### How It Works Now
+
+When `hasRole`, `hasPermission`, or any permission check method is called, the library:
+
+1. Decodes the current JWT access token (reads from whichever storage strategy you configured)
+2. Extracts `roles` and `permissions` claims from the token payload
+3. Uses those values for all checks
+4. Falls back to the stored user object only if the token has no `roles`/`permissions` claims (backward compatibility)
+
+Because the JWT is server-signed, modifying the token payload in storage breaks its signature. The token becomes unusable for API calls, and the client-side UI checks now also reflect the unmodified, server-issued claims.
+
+### What Your JWT Must Include
+
+For JWT-based checks to work, your server must include roles and/or permissions in the token payload:
+
+```json
+{
+  "sub": "user-id",
+  "name": "John Doe",
+  "roles": ["manager"],
+  "permissions": ["read_users", "write_users", "read_settings"],
+  "exp": 1234567890
+}
+```
+
+Supported permission claim names: `permissions` or `perms`.
+
+### Storage Security Impact
+
+| Storage Type | Can be tampered? | JWT check protects against? |
+|---|---|---|
+| `localStorage` | Yes (DevTools) | ✅ Yes |
+| `sessionStorage` | Yes (DevTools) | ✅ Yes |
+| `memory` | No (JS only) | ✅ Already secure |
+
+> **Note:** Client-side security is always a convenience layer. The authoritative security check must remain on your server. JWT validation without signature verification on the client means a determined attacker who crafts a well-formed fake JWT could still bypass UI checks — but they would fail on any real API call. Use the recommended security mode (access token in memory) to make token tampering impossible.
+
+### Backward Compatibility
+
+If your JWT does not include `roles` or `permissions` claims, the library falls back to the stored user object. No changes are required for existing implementations, but your users will not benefit from the tamper-resistant checks until your backend includes these claims in the token.
+
 ## Security Checklist
 
 Before deploying to production:
@@ -481,6 +530,7 @@ Before deploying to production:
 - [ ] Backend validates all tokens
 - [ ] Backend implements proper CORS configuration
 - [ ] Sensitive API endpoints require authentication
+- [ ] JWT payload includes `roles` and `permissions` claims (required for JWT-based permission checks)
 - [ ] Regular security audits scheduled
 
 ## Advanced Security Configuration

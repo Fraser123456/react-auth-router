@@ -449,10 +449,20 @@ export class AuthStore {
   }
 
   hasRole(role) {
+    const tokenRoles = this.getTokenRoles();
+    if (tokenRoles.length > 0) {
+      return tokenRoles.includes(role);
+    }
+    // Fallback: user object (backward compat for tokens without a roles claim)
     return this.user?.roles?.includes(role) || false;
   }
 
   hasPermission(permission) {
+    const tokenPermissions = this.getTokenPermissions();
+    if (tokenPermissions.length > 0) {
+      return tokenPermissions.includes(permission);
+    }
+    // Fallback: user object (backward compat for tokens without a permissions claim)
     return this.user?.permissions?.includes(permission) || false;
   }
 
@@ -482,7 +492,8 @@ export class AuthStore {
       JSON.stringify({
         sub: user.id,
         name: user.name,
-        roles: user.roles,
+        roles: user.roles || [],
+        permissions: user.permissions || [],
         type: type,
         exp: Math.floor(Date.now() / 1000) + expiresIn,
         iat: Math.floor(Date.now() / 1000),
@@ -490,6 +501,28 @@ export class AuthStore {
     );
     const signature = btoa(`mock_signature_${type}_` + Date.now());
     return `${header}.${payload}.${signature}`;
+  }
+
+  decodeToken(token) {
+    try {
+      if (!token) return null;
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      return JSON.parse(atob(parts[1]));
+    } catch {
+      return null;
+    }
+  }
+
+  getTokenRoles() {
+    const claims = this.decodeToken(this.getToken());
+    return claims?.roles || [];
+  }
+
+  getTokenPermissions() {
+    const claims = this.decodeToken(this.getToken());
+    // Support common JWT permission claim names
+    return claims?.permissions || claims?.perms || [];
   }
 
   async validateToken(token) {

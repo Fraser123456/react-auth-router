@@ -43,30 +43,24 @@ export const useAuth = () => {
 
 export const usePermissions = () => {
   const authStore = getAuthStore();
-  const [permissions, setPermissions] = useState({
-    roles: authStore.getUser()?.roles || [],
-    permissions: authStore.getUser()?.permissions || [],
-  });
+
+  const readFromStore = () => {
+    const tokenRoles = authStore.getTokenRoles();
+    const tokenPermissions = authStore.getTokenPermissions();
+    return {
+      roles: tokenRoles.length > 0 ? tokenRoles : (authStore.getUser()?.roles || []),
+      permissions: tokenPermissions.length > 0 ? tokenPermissions : (authStore.getUser()?.permissions || []),
+    };
+  };
+
+  const [permissions, setPermissions] = useState(readFromStore);
 
   useEffect(() => {
-    const unsubscribe = authStore.subscribe((update) => {
-      const newRoles = update.user?.roles || [];
-      const newPermissions = update.user?.permissions || [];
-
-      if (
-        JSON.stringify(newRoles) !== JSON.stringify(permissions.roles) ||
-        JSON.stringify(newPermissions) !==
-          JSON.stringify(permissions.permissions)
-      ) {
-        setPermissions({
-          roles: newRoles,
-          permissions: newPermissions,
-        });
-      }
+    const unsubscribe = authStore.subscribe(() => {
+      setPermissions(readFromStore());
     });
-
     return unsubscribe;
-  }, [authStore, permissions]);
+  }, [authStore]);
 
   return {
     roles: permissions.roles,

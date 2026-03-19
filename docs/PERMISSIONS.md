@@ -4,11 +4,31 @@
 
 ## Table of Contents
 
+- [JWT-Based Permission Checks](#jwt-based-permission-checks)
 - [Role-Based Access Control (RBAC)](#role-based-access-control-rbac)
 - [Permission-Based Access Control](#permission-based-access-control)
 - [Component-Level Protection](#component-level-protection)
 - [Permission Hierarchy](#permission-hierarchy)
 - [Combining Roles and Permissions](#combining-roles-and-permissions)
+
+## JWT-Based Permission Checks
+
+As of v2.7.0, all permission and role checks (`hasRole`, `hasPermission`, etc.) read from the **decoded JWT access token** rather than from the user object in browser storage.
+
+This prevents users from opening DevTools and modifying their roles/permissions in sessionStorage or localStorage to bypass UI-level access control.
+
+**Your JWT payload must include `roles` and/or `permissions` claims:**
+
+```json
+{
+  "sub": "user-id",
+  "roles": ["manager"],
+  "permissions": ["read_users", "write_users", "read_settings"],
+  "exp": 1234567890
+}
+```
+
+If your token does not include these claims, the library falls back to the stored user object (backward compatible). See [Security docs](./SECURITY.md#jwt-based-permission-validation-v270) for full details.
 
 ## Role-Based Access Control (RBAC)
 
